@@ -16,11 +16,17 @@ public class AuthController : Controller
         _authService = authService;
     }
 
-    public IActionResult Login() => View();
+    public IActionResult Login(string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        return View();
+    }
 
     [HttpPost]
-    public async Task<IActionResult> Login(LoginViewModel vm)
+    public async Task<IActionResult> Login(LoginViewModel vm, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
+
         if (!ModelState.IsValid)
             return View(vm);
 
@@ -32,7 +38,11 @@ public class AuthController : Controller
             return View(vm);
         }
 
-        await SignInUser(result);
+        await SignInUser(result, vm.RememberMe);
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
         return RedirectToAction("Index", "Home");
     }
 
@@ -58,7 +68,7 @@ public class AuthController : Controller
             return View(vm);
         }
 
-        await SignInUser(result);
+        await SignInUser(result, rememberMe: true);
         return RedirectToAction("Index", "Home");
     }
 
@@ -68,7 +78,7 @@ public class AuthController : Controller
         return RedirectToAction("Index", "Home");
     }
 
-    private async Task SignInUser(AuthApiResult result)
+    private async Task SignInUser(AuthApiResult result, bool rememberMe)
     {
         var claims = new List<Claim>
         {
@@ -85,6 +95,6 @@ public class AuthController : Controller
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal,
-            new AuthenticationProperties { IsPersistent = true });
+            new AuthenticationProperties { IsPersistent = rememberMe });
     }
 }

@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="ApartmentAz.Tests/ApartmentAz.Tests.csproj" />
   <Project Path="D:/Users/nihat/source/ClassWork/ClassProject/ApartmentAz.API/ApartmentAz.API.csproj" />
   <Project Path="D:/Users/nihat/source/ClassWork/ClassProject/ApartmentAz.BLL/ApartmentAz.BLL.csproj" />
   <Project Path="D:/Users/nihat/source/ClassWork/ClassProject/ApartmentAz.CLIENT/ApartmentAz.CLIENT.csproj" />

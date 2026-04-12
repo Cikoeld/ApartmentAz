@@ -1,3 +1,4 @@
+using ApartmentAz.BLL.Caching;
 using ApartmentAz.BLL.DTOs.Listing;
 using ApartmentAz.BLL.Interfaces;
 using ApartmentAz.BLL.Models;
@@ -6,6 +7,7 @@ using ApartmentAz.DAL.Interfaces;
 using ApartmentAz.DAL.Models;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ApartmentAz.BLL.Services;
 
@@ -15,17 +17,23 @@ public class ListingService : IListingService
     private readonly IPhotoService _photoService;
     private readonly ITranslationService _translationService;
     private readonly IMapper _mapper;
+    private readonly IMemoryCache _cache;
+    private readonly ICacheInvalidator _cacheInvalidator;
 
     public ListingService(
         IListingRepository listingRepository,
         IPhotoService photoService,
         ITranslationService translationService,
-        IMapper mapper)
+        IMapper mapper,
+        IMemoryCache cache,
+        ICacheInvalidator cacheInvalidator)
     {
         _listingRepository = listingRepository;
         _photoService = photoService;
         _translationService = translationService;
         _mapper = mapper;
+        _cache = cache;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     public async Task<Result<Guid>> CreateAsync(CreateListingDto dto, Guid userId)
@@ -43,7 +51,7 @@ public class ListingService : IListingService
         listing.Id = Guid.NewGuid();
         listing.UserId = userId;
         listing.CreatedAt = DateTime.UtcNow;
-        listing.IsApproved = true;
+        listing.IsApproved = false;
 
         // Map translations
         listing.Translations = dto.Translations.Select(t =>
@@ -77,11 +85,22 @@ public class ListingService : IListingService
 
         await _listingRepository.CreateAsync(listing);
 
+        _cacheInvalidator.InvalidateListings();
+
         return Result<Guid>.Success(listing.Id);
     }
 
     public async Task<Result<PagedResult<ListingDto>>> GetAllAsync(ListingFilterDto filter)
     {
+        // Build a cache key from the filter parameters
+        var cacheKey = $"{CacheKeys.ListingsPrefix}{filter.Lang}_{filter.CityId}_{filter.DistrictId}_{filter.MetroId}_" +
+                       $"{filter.MinPrice}_{filter.MaxPrice}_{filter.RoomCount}_{filter.ListingType}_{filter.PropertyType}_" +
+                       $"{filter.RepairStatus}_{filter.MinArea}_{filter.MaxArea}_{filter.SortBy}_{filter.PageNumber}_{filter.PageSize}_" +
+                       $"{filter.SearchQuery}";
+
+        if (_cache.TryGetValue(cacheKey, out PagedResult<ListingDto>? cached) && cached != null)
+            return Result<PagedResult<ListingDto>>.Success(cached);
+
         var lang = filter.Lang ?? "az";
         var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
         var pageSize = filter.PageSize is < 1 or > 50 ? 12 : filter.PageSize;
@@ -124,20 +143,48 @@ public class ListingService : IListingService
         if (filter.MaxArea.HasValue)
             query = query.Where(x => x.Area <= filter.MaxArea.Value);
 
+        // ── 2b. Text search — EF.Functions.Like for SQL LIKE ────────────────
+        var hasSearch = !string.IsNullOrWhiteSpace(filter.SearchQuery);
+        var searchTerm = hasSearch ? filter.SearchQuery!.Trim() : string.Empty;
+        var searchPattern = $"%{searchTerm}%";
+
+        if (hasSearch)
+        {
+            query = query.Where(x =>
+                x.Translations.Any(t =>
+                    EF.Functions.Like(t.Title, searchPattern) ||
+                    EF.Functions.Like(t.Description, searchPattern)));
+        }
+
         // ── 3. Count before pagination (single COUNT query in SQL) ──────────
         var totalCount = await query.CountAsync();
 
         // ── 4. Sorting — use IOrderedQueryable so EF Core always emits ORDER BY ─
+        // If searching, default sort is by relevance (exact match first)
         var sortKey = filter.SortBy?.Trim().ToLowerInvariant();
-        IOrderedQueryable<Listing> orderedQuery = sortKey switch
+        IOrderedQueryable<Listing> orderedQuery;
+
+        if (hasSearch && string.IsNullOrEmpty(sortKey))
         {
-            "priceasc"  => query.OrderBy(x => x.Price),
-            "pricedesc" => query.OrderByDescending(x => x.Price),
-            "areaasc"   => query.OrderBy(x => x.Area),
-            "areadesc"  => query.OrderByDescending(x => x.Area),
-            "oldest"    => query.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id),
-            _           => query.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
-        };
+            // Relevance ranking: exact title match > title contains > description contains
+            orderedQuery = query
+                .OrderByDescending(x => x.Translations.Any(t => t.Title == searchTerm) ? 3 : 0)
+                .ThenByDescending(x => x.Translations.Any(t => EF.Functions.Like(t.Title, searchPattern)) ? 2 : 0)
+                .ThenByDescending(x => x.Translations.Any(t => EF.Functions.Like(t.Description, searchPattern)) ? 1 : 0)
+                .ThenByDescending(x => x.CreatedAt);
+        }
+        else
+        {
+            orderedQuery = sortKey switch
+            {
+                "priceasc"  => query.OrderBy(x => x.Price),
+                "pricedesc" => query.OrderByDescending(x => x.Price),
+                "areaasc"   => query.OrderBy(x => x.Area),
+                "areadesc"  => query.OrderByDescending(x => x.Area),
+                "oldest"    => query.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id),
+                _           => query.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
+            };
+        }
 
         // ── 5. Pagination ────────────────────────────────────────────────────
         var skip = (pageNumber - 1) * pageSize;
@@ -205,13 +252,19 @@ public class ListingService : IListingService
             })
             .ToListAsync();
 
-        return Result<PagedResult<ListingDto>>.Success(new PagedResult<ListingDto>
+        var pagedResult = new PagedResult<ListingDto>
         {
             Items      = items,
             TotalCount = totalCount,
             PageNumber = pageNumber,
             PageSize   = pageSize
-        });
+        };
+
+        // Cache for 30 seconds
+        CacheInvalidator.TrackKey(cacheKey);
+        _cache.Set(cacheKey, pagedResult, TimeSpan.FromSeconds(30));
+
+        return Result<PagedResult<ListingDto>>.Success(pagedResult);
     }
 
     public async Task<Result<ListingDetailsDto>> GetByIdAsync(Guid id, string lang)
@@ -280,6 +333,8 @@ public class ListingService : IListingService
         }
 
         await _listingRepository.DeleteAsync(listing);
+
+        _cacheInvalidator.InvalidateListings();
 
         return Result<bool>.Success(true);
     }

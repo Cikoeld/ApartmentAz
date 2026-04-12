@@ -12,6 +12,13 @@ public class UILocalizer
         ["Login"] = new() { ["az"] = "Giriş", ["en"] = "Login", ["ru"] = "Вход" },
         ["Register"] = new() { ["az"] = "Qeydiyyat", ["en"] = "Register", ["ru"] = "Регистрация" },
         ["AdminPanel"] = new() { ["az"] = "Admin Panel", ["en"] = "Admin Panel", ["ru"] = "Админ панель" },
+        ["WelcomeBack"] = new() { ["az"] = "Xoş gəlmisiniz", ["en"] = "Welcome back", ["ru"] = "С возвращением" },
+        ["SignInToYourAccount"] = new() { ["az"] = "ApartmentAz hesabınıza daxil olun", ["en"] = "Sign in to your ApartmentAz account", ["ru"] = "Войдите в свой аккаунт ApartmentAz" },
+        ["Password"] = new() { ["az"] = "Şifrə", ["en"] = "Password", ["ru"] = "Пароль" },
+        ["RememberMe"] = new() { ["az"] = "Məni xatırla", ["en"] = "Remember me", ["ru"] = "Запомнить меня" },
+        ["SignIn"] = new() { ["az"] = "Daxil ol", ["en"] = "Sign In", ["ru"] = "Войти" },
+        ["DontHaveAnAccount"] = new() { ["az"] = "Hesabınız yoxdur?", ["en"] = "Don't have an account?", ["ru"] = "Нет аккаунта?" },
+        ["CreateOne"] = new() { ["az"] = "Yaradın", ["en"] = "Create one", ["ru"] = "Создать" },
 
         // ── Listing results ─────────────────────────────────────────
         ["NoListingsFound"] = new() { ["az"] = "Elan tapılmadı", ["en"] = "No listings found", ["ru"] = "Объявления не найдены" },

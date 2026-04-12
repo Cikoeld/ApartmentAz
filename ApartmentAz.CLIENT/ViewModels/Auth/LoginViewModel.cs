@@ -9,4 +9,6 @@ public class LoginViewModel
 
     [Required, MinLength(6)]
     public string Password { get; set; } = null!;
+
+    public bool RememberMe { get; set; }
 }

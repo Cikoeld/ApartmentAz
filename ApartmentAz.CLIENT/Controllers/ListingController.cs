@@ -49,7 +49,6 @@ public class ListingController : Controller
         return View(listing);
     }
 
-    [Authorize]
     public async Task<IActionResult> Create(string? lang = null)
     {
         var resolvedLang = ResolveLang(lang);
@@ -64,7 +63,6 @@ public class ListingController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public async Task<IActionResult> Create(CreateListingViewModel vm, string? lang = null)
     {
         var resolvedLang = ResolveLang(lang);
@@ -78,8 +76,6 @@ public class ListingController : Controller
         }
 
         var token = User.FindFirst("Token")?.Value;
-        if (string.IsNullOrEmpty(token))
-            return RedirectToAction("Login", "Auth");
 
         // Auto-translate title and description to all 3 languages
         var titleTranslations = await _translationService.TranslateToAllAsync(vm.Title, resolvedLang);
@@ -92,7 +88,9 @@ public class ListingController : Controller
         vm.DescriptionEn = descTranslations.GetValueOrDefault("en", vm.Description);
         vm.DescriptionRu = descTranslations.GetValueOrDefault("ru", vm.Description);
 
-        var response = await _listingService.CreateAsync(vm, token);
+        var response = string.IsNullOrEmpty(token)
+            ? await _listingService.CreateRequestAsync(vm)
+            : await _listingService.CreateAsync(vm, token);
 
         if (response.IsSuccessStatusCode)
             return RedirectToAction("Index", "Home", new { lang = resolvedLang });

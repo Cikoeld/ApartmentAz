@@ -1,3 +1,4 @@
+using ApartmentAz.BLL.Caching;
 using ApartmentAz.BLL.Interfaces;
 using ApartmentAz.BLL.MappingProfiles;
 using ApartmentAz.BLL.Services;
@@ -12,6 +13,9 @@ public static class ServiceCollectionExtensions
         // In-memory cache (used by TranslationService)
         services.AddMemoryCache();
 
+        // Cache invalidator
+        services.AddSingleton<ICacheInvalidator, CacheInvalidator>();
+
         // AutoMapper
         services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -20,6 +24,7 @@ public static class ServiceCollectionExtensions
 
         // Auth & User
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IUserService, UserService>();
 
         // Listings

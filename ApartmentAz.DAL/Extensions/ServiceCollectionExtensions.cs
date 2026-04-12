@@ -31,6 +31,9 @@ namespace ApartmentAz.DAL.Extensions
             // 💬 Messages
             services.AddScoped<IMessageRepository, MessageRepository>();
 
+            // 🔑 Refresh Tokens
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
             // 🏘️ Residential Complex
             services.AddScoped<IResidentialComplexRepository, ResidentialComplexRepository>();
 

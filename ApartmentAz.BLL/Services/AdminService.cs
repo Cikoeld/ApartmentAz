@@ -16,15 +16,18 @@ public class AdminService : IAdminService
     private readonly IListingRepository _listingRepository;
     private readonly UserManager<AppUser> _userManager;
     private readonly IPhotoService _photoService;
+    private readonly ICacheInvalidator _cacheInvalidator;
 
     public AdminService(
         IListingRepository listingRepository,
         UserManager<AppUser> userManager,
-        IPhotoService photoService)
+        IPhotoService photoService,
+        ICacheInvalidator cacheInvalidator)
     {
         _listingRepository = listingRepository;
         _userManager = userManager;
         _photoService = photoService;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     // ── Dashboard ─────────────────────────────────────────────────────────
@@ -208,6 +211,7 @@ public class AdminService : IAdminService
 
         listing.IsApproved = true;
         await _listingRepository.SaveChangesAsync();
+        _cacheInvalidator.InvalidateListings();
         return Result<bool>.Success(true);
     }
 
@@ -219,6 +223,7 @@ public class AdminService : IAdminService
 
         listing.IsApproved = false;
         await _listingRepository.SaveChangesAsync();
+        _cacheInvalidator.InvalidateListings();
         return Result<bool>.Success(true);
     }
 
@@ -235,6 +240,7 @@ public class AdminService : IAdminService
         listing.TotalFloors = dto.TotalFloors;
 
         await _listingRepository.SaveChangesAsync();
+        _cacheInvalidator.InvalidateListings();
         return Result<bool>.Success(true);
     }
 
@@ -251,10 +257,11 @@ public class AdminService : IAdminService
         }
 
         await _listingRepository.DeleteAsync(listing);
+        _cacheInvalidator.InvalidateListings();
         return Result<bool>.Success(true);
     }
 
-    // ── Users ────────────────────────────────────────────────────────────
+    // ── Users
 
     public async Task<Result<List<UserDto>>> GetAllUsersAsync()
     {

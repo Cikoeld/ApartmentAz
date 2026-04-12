@@ -24,6 +24,9 @@ public class ListingFilterDto
     // Sorting
     public string? SortBy { get; set; }
 
+    // Search
+    public string? SearchQuery { get; set; }
+
     // Pagination
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 12;

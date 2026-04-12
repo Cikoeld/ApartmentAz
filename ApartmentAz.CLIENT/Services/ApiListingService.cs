@@ -52,7 +52,28 @@ public class ApiListingService
 
     public async Task<HttpResponseMessage> CreateAsync(CreateListingViewModel vm, string token)
     {
-        using var content = new MultipartFormDataContent();
+        using var content = BuildCreateMultipartContent(vm);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/listings");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        request.Content = content;
+
+        return await _http.SendAsync(request);
+    }
+
+    public async Task<HttpResponseMessage> CreateRequestAsync(CreateListingViewModel vm)
+    {
+        using var content = BuildCreateMultipartContent(vm);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/listings/request")
+        {
+            Content = content
+        };
+
+        return await _http.SendAsync(request);
+    }
+
+    private static MultipartFormDataContent BuildCreateMultipartContent(CreateListingViewModel vm)
+    {
+        var content = new MultipartFormDataContent();
 
         content.Add(new StringContent(vm.ListingType.ToString()), "ListingType");
         if (vm.RentType.HasValue)
@@ -100,11 +121,7 @@ public class ApiListingService
             content.Add(new StreamContent(stream), "Images", file.FileName);
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "api/listings");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        request.Content = content;
-
-        return await _http.SendAsync(request);
+        return content;
     }
 
     public async Task<HttpResponseMessage> DeleteAsync(Guid id, string token)
