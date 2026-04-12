@@ -76,6 +76,9 @@ public class AuthController : Controller
             new("Token", result.Token ?? string.Empty)
         };
 
+        foreach (var role in result.Roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
 

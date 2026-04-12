@@ -1,3 +1,4 @@
+using ApartmentAz.API.Hubs;
 using ApartmentAz.BLL.Extensions;
 using ApartmentAz.DAL.Data;
 using ApartmentAz.DAL.Extensions;
@@ -40,13 +41,14 @@ namespace ApartmentAz.API
             // ── BLL services ─────────────────────────────────────────────────
             builder.Services.AddBllServices();
 
-            // ── CORS (allow CLIENT) ──────────────────────────────────────
+            // ── CORS (allow CLIENT + SignalR) ──────────────────────────────
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
                     policy.WithOrigins("https://localhost:7090", "http://localhost:5237")
                           .AllowAnyHeader()
-                          .AllowAnyMethod());
+                          .AllowAnyMethod()
+                          .AllowCredentials());
             });
 
             // ── JWT Bearer Authentication ─────────────────────────────────
@@ -71,11 +73,30 @@ namespace ApartmentAz.API
                     ValidAudience            = jwtAudience,
                     IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
+                // Allow JWT token via query string for SignalR
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
+
+            // ── SignalR ───────────────────────────────────────────────────────
+            builder.Services.AddSignalR();
 
             // ── Web ──────────────────────────────────────────────────────────
             builder.Services.AddControllers();
-            builder.Services.AddOpenApi();            var app = builder.Build();
+            builder.Services.AddOpenApi();
+
+            var app = builder.Build();
 
             // ── Auto-migrate database ────────────────────────────────────────
             using (var scope = app.Services.CreateScope())
@@ -83,6 +104,31 @@ namespace ApartmentAz.API
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 db.Database.Migrate();
                 await SeedData.SeedAsync(db);
+
+                // Seed roles + admin account
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
+                string[] roles = ["Admin", "User"];
+                foreach (var role in roles)
+                {
+                    if (!await roleManager.RoleExistsAsync(role))
+                        await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+                }
+
+                const string adminEmail = "admin@apartmentaz.com";
+                if (await userManager.FindByEmailAsync(adminEmail) == null)
+                {
+                    var admin = new AppUser
+                    {
+                        FullName = "Admin",
+                        Email = adminEmail,
+                        UserName = adminEmail,
+                        EmailConfirmed = true
+                    };
+                    await userManager.CreateAsync(admin, "Admin123");
+                    await userManager.AddToRoleAsync(admin, "Admin");
+                }
             }
 
             if (app.Environment.IsDevelopment())
@@ -98,6 +144,7 @@ namespace ApartmentAz.API
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/hubs/chat");
 
             await app.RunAsync();
         }

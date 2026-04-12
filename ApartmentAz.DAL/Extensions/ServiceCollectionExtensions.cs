@@ -28,6 +28,9 @@ namespace ApartmentAz.DAL.Extensions
             // 🏢 Agency
             services.AddScoped<IAgencyRepository, AgencyRepository>();
 
+            // 💬 Messages
+            services.AddScoped<IMessageRepository, MessageRepository>();
+
             // 🏘️ Residential Complex
             services.AddScoped<IResidentialComplexRepository, ResidentialComplexRepository>();
 

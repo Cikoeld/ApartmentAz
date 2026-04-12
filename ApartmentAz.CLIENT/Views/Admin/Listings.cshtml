@@ -1,0 +1,240 @@
+@model List<ApartmentAz.CLIENT.Services.AdminListingApiModel>
+@{
+    ViewData["Title"] = "Listing Moderation";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-list-check"></i> Listing Moderation</h3>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Dashboard
+    </a>
+</div>
+
+<div id="statusAlert" class="alert d-none" role="alert"></div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th style="width:60px"></th>
+                <th>Title</th>
+                <th>City</th>
+                <th>Price</th>
+                <th>Rooms</th>
+                <th>Area</th>
+                <th>Floor</th>
+                <th>Owner</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th style="width:260px">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="listingsBody">
+            @foreach (var item in Model)
+            {
+                <tr id="listing-@item.Id">
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                        {
+                            <img src="@item.ThumbnailUrl" style="width:50px;height:35px;object-fit:cover;border-radius:4px;" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-image text-muted"></i>
+                        }
+                    </td>
+                    <td>@item.Title</td>
+                    <td>@item.CityName</td>
+                    <td>@item.Price.ToString("N0") ₼</td>
+                    <td>@item.RoomCount</td>
+                    <td>@item.Area m²</td>
+                    <td>@item.Floor / @item.TotalFloors</td>
+                    <td>
+                        <small>@item.OwnerName</small><br />
+                        <small class="text-muted">@item.OwnerEmail</small>
+                    </td>
+                    <td><small>@item.CreatedAt.ToString("dd.MM.yyyy")</small></td>
+                    <td>
+                        @if (item.IsApproved)
+                        {
+                            <span class="badge bg-success" id="badge-@item.Id">Approved</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark" id="badge-@item.Id">Pending</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            @if (!item.IsApproved)
+                            {
+                                <button class="btn btn-success" onclick="approveListing('@item.Id')">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-warning" onclick="rejectListing('@item.Id')">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            }
+                            <button class="btn btn-outline-primary" onclick="openEditListing('@item.Id', @item.Price, @item.RoomCount, @item.Area, @item.Floor, @item.TotalFloors)">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteListing('@item.Id')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Edit Listing Modal -->
+<div class="modal fade" id="editListingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Listing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editListingId" />
+                <div class="mb-3">
+                    <label class="form-label">Price (₼)</label>
+                    <input type="number" class="form-control" id="editPrice" step="0.01" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Room Count</label>
+                    <input type="number" class="form-control" id="editRoomCount" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Area (m²)</label>
+                    <input type="number" class="form-control" id="editArea" step="0.01" />
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Floor</label>
+                        <input type="number" class="form-control" id="editFloor" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Total Floors</label>
+                        <input type="number" class="form-control" id="editTotalFloors" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveListingEdit()">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showAlert(msg, type) {
+        const el = document.getElementById('statusAlert');
+        el.className = `alert alert-${type}`;
+        el.textContent = msg;
+        el.classList.remove('d-none');
+        setTimeout(() => el.classList.add('d-none'), 3000);
+    }
+
+    async function approveListing(id) {
+        const res = await fetch(`/Admin/ApproveListing?id=${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const badge = document.getElementById(`badge-${id}`);
+            badge.className = 'badge bg-success';
+            badge.textContent = 'Approved';
+            const row = document.getElementById(`listing-${id}`);
+            const approveBtn = row.querySelector('.btn-success');
+            if (approveBtn) {
+                const rejectBtn = document.createElement('button');
+                rejectBtn.className = 'btn btn-warning btn-sm';
+                rejectBtn.innerHTML = '<i class="bi bi-x-lg"></i> Reject';
+                rejectBtn.onclick = () => rejectListing(id);
+                approveBtn.parentNode.insertBefore(rejectBtn, approveBtn);
+                approveBtn.remove();
+            }
+            showAlert('Listing approved!', 'success');
+        } else {
+            showAlert('Failed to approve listing.', 'danger');
+        }
+    }
+
+    async function rejectListing(id) {
+        const res = await fetch(`/Admin/RejectListing?id=${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const badge = document.getElementById(`badge-${id}`);
+            badge.className = 'badge bg-warning text-dark';
+            badge.textContent = 'Pending';
+            const row = document.getElementById(`listing-${id}`);
+            const rejectBtn = row.querySelector('.btn-warning');
+            if (rejectBtn) {
+                const approveBtn = document.createElement('button');
+                approveBtn.className = 'btn btn-success btn-sm';
+                approveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Approve';
+                approveBtn.onclick = () => approveListing(id);
+                rejectBtn.parentNode.insertBefore(approveBtn, rejectBtn);
+                rejectBtn.remove();
+            }
+            showAlert('Listing rejected.', 'warning');
+        } else {
+            showAlert('Failed to reject listing.', 'danger');
+        }
+    }
+
+    function openEditListing(id, price, rooms, area, floor, totalFloors) {
+        document.getElementById('editListingId').value = id;
+        document.getElementById('editPrice').value = price;
+        document.getElementById('editRoomCount').value = rooms;
+        document.getElementById('editArea').value = area;
+        document.getElementById('editFloor').value = floor;
+        document.getElementById('editTotalFloors').value = totalFloors;
+        new bootstrap.Modal(document.getElementById('editListingModal')).show();
+    }
+
+    async function saveListingEdit() {
+        const id = document.getElementById('editListingId').value;
+        const body = {
+            price: parseFloat(document.getElementById('editPrice').value),
+            roomCount: parseInt(document.getElementById('editRoomCount').value),
+            area: parseFloat(document.getElementById('editArea').value),
+            floor: parseInt(document.getElementById('editFloor').value),
+            totalFloors: parseInt(document.getElementById('editTotalFloors').value)
+        };
+        const res = await fetch(`/Admin/UpdateListing?id=${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editListingModal')).hide();
+            showAlert('Listing updated!', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showAlert('Failed to update listing.', 'danger');
+        }
+    }
+
+    async function deleteListing(id) {
+        if (!confirm('Delete this listing permanently?')) return;
+        const res = await fetch(`/Admin/DeleteListing?id=${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById(`listing-${id}`).remove();
+            showAlert('Listing deleted!', 'success');
+        } else {
+            showAlert('Failed to delete listing.', 'danger');
+        }
+    }
+</script>
+}

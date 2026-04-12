@@ -5,7 +5,7 @@ using ApartmentAz.DAL.Enums;
 using ApartmentAz.DAL.Interfaces;
 using ApartmentAz.DAL.Models;
 using AutoMapper;
-using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace ApartmentAz.BLL.Services;
 
@@ -43,6 +43,7 @@ public class ListingService : IListingService
         listing.Id = Guid.NewGuid();
         listing.UserId = userId;
         listing.CreatedAt = DateTime.UtcNow;
+        listing.IsApproved = true;
 
         // Map translations
         listing.Translations = dto.Translations.Select(t =>
@@ -79,47 +80,138 @@ public class ListingService : IListingService
         return Result<Guid>.Success(listing.Id);
     }
 
-    public async Task<Result<List<ListingDto>>> GetAllAsync(ListingFilterDto filter)
+    public async Task<Result<PagedResult<ListingDto>>> GetAllAsync(ListingFilterDto filter)
     {
-        Expression<Func<Listing, bool>>? predicate = BuildFilterExpression(filter);
+        var lang = filter.Lang ?? "az";
+        var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+        var pageSize = filter.PageSize is < 1 or > 50 ? 12 : filter.PageSize;
 
-        Func<IQueryable<Listing>, IOrderedQueryable<Listing>>? orderBy = filter.SortBy?.ToLowerInvariant() switch
+        // ── 1. Start with no-tracking IQueryable (no Includes needed) ──────
+        var query = _listingRepository.GetQueryable()
+            .Where(x => x.IsApproved); // Only show approved listings to public
+
+        // ── 2. Dynamic filters — all executed in SQL ────────────────────────
+        if (filter.CityId.HasValue)
+            query = query.Where(x => x.CityId == filter.CityId.Value);
+
+        if (filter.DistrictId.HasValue)
+            query = query.Where(x => x.DistrictId == filter.DistrictId.Value);
+
+        if (filter.MetroId.HasValue)
+            query = query.Where(x => x.MetroId == filter.MetroId.Value);
+
+        if (filter.MinPrice.HasValue)
+            query = query.Where(x => x.Price >= filter.MinPrice.Value);
+
+        if (filter.MaxPrice.HasValue)
+            query = query.Where(x => x.Price <= filter.MaxPrice.Value);
+
+        if (filter.RoomCount.HasValue)
+            query = query.Where(x => x.RoomCount == filter.RoomCount.Value);
+
+        if (filter.ListingType.HasValue)
+            query = query.Where(x => x.ListingType == filter.ListingType.Value);
+
+        if (filter.PropertyType.HasValue)
+            query = query.Where(x => x.PropertyType == filter.PropertyType.Value);
+
+        if (filter.RepairStatus.HasValue)
+            query = query.Where(x => x.RepairStatus == filter.RepairStatus.Value);
+
+        if (filter.MinArea.HasValue)
+            query = query.Where(x => x.Area >= filter.MinArea.Value);
+
+        if (filter.MaxArea.HasValue)
+            query = query.Where(x => x.Area <= filter.MaxArea.Value);
+
+        // ── 3. Count before pagination (single COUNT query in SQL) ──────────
+        var totalCount = await query.CountAsync();
+
+        // ── 4. Sorting — use IOrderedQueryable so EF Core always emits ORDER BY ─
+        var sortKey = filter.SortBy?.Trim().ToLowerInvariant();
+        IOrderedQueryable<Listing> orderedQuery = sortKey switch
         {
-            "priceasc" => q => q.OrderBy(x => x.Price),
-            "pricedesc" => q => q.OrderByDescending(x => x.Price),
-            "areaasc" => q => q.OrderBy(x => x.Area),
-            "areadesc" => q => q.OrderByDescending(x => x.Area),
-            "oldest" => q => q.OrderBy(x => x.CreatedAt),
-            _ => q => q.OrderByDescending(x => x.CreatedAt) // newest first by default
+            "priceasc"  => query.OrderBy(x => x.Price),
+            "pricedesc" => query.OrderByDescending(x => x.Price),
+            "areaasc"   => query.OrderBy(x => x.Area),
+            "areadesc"  => query.OrderByDescending(x => x.Area),
+            "oldest"    => query.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id),
+            _           => query.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
         };
 
-        var listings = await _listingRepository.GetAllFilteredAsync(predicate, orderBy);
-        var lang = filter.Lang ?? "az";
+        // ── 5. Pagination ────────────────────────────────────────────────────
+        var skip = (pageNumber - 1) * pageSize;
 
-        var result = listings.Select(x =>
-        {
-            var translation = x.Translations.FirstOrDefault(t => t.LanguageCode == lang)
-                              ?? x.Translations.FirstOrDefault(t => t.LanguageCode == "az");
-
-            return new ListingDto
+        // ── 6. SQL-level projection — EF Core generates minimal SELECT ───────
+        var items = await orderedQuery
+            .Skip(skip)
+            .Take(pageSize)
+            .Select(x => new ListingDto
             {
-                Id = x.Id,
-                Price = x.Price,
-                RoomCount = x.RoomCount,
-                Area = x.Area,
-                Floor = x.Floor,
+                Id          = x.Id,
+                Price       = x.Price,
+                RoomCount   = x.RoomCount,
+                Area        = x.Area,
+                Floor       = x.Floor,
                 TotalFloors = x.TotalFloors,
-                ListingType = x.ListingType,
+                ListingType  = x.ListingType,
                 PropertyType = x.PropertyType,
-                Title = translation?.Title ?? string.Empty,
-                Description = translation?.Description ?? string.Empty,
-                CityName = GetTranslatedName(x.City?.Translations, lang),
-                DistrictName = GetTranslatedName(x.District?.Translations, lang),
-                ThumbnailUrl = x.Images?.FirstOrDefault()?.ImageUrl
-            };
-        }).ToList();
 
-        return Result<List<ListingDto>>.Success(result);
+                // Prefer requested lang, fall back to "az"
+                Title = x.Translations
+                    .Where(t => t.LanguageCode == lang)
+                    .Select(t => t.Title)
+                    .FirstOrDefault()
+                    ?? x.Translations
+                        .Where(t => t.LanguageCode == "az")
+                        .Select(t => t.Title)
+                        .FirstOrDefault()
+                    ?? string.Empty,
+
+                Description = x.Translations
+                    .Where(t => t.LanguageCode == lang)
+                    .Select(t => t.Description)
+                    .FirstOrDefault()
+                    ?? x.Translations
+                        .Where(t => t.LanguageCode == "az")
+                        .Select(t => t.Description)
+                        .FirstOrDefault()
+                    ?? string.Empty,
+
+                CityName = x.City.Translations
+                    .Where(t => t.LanguageCode == lang)
+                    .Select(t => t.Name)
+                    .FirstOrDefault()
+                    ?? x.City.Translations
+                        .Where(t => t.LanguageCode == "az")
+                        .Select(t => t.Name)
+                        .FirstOrDefault(),
+
+                DistrictName = x.District != null
+                    ? x.District.Translations
+                        .Where(t => t.LanguageCode == lang)
+                        .Select(t => t.Name)
+                        .FirstOrDefault()
+                      ?? x.District.Translations
+                          .Where(t => t.LanguageCode == "az")
+                          .Select(t => t.Name)
+                          .FirstOrDefault()
+                    : null,
+
+                // Only the first image URL — no full Images entity load
+                ThumbnailUrl = x.Images
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
+
+        return Result<PagedResult<ListingDto>>.Success(new PagedResult<ListingDto>
+        {
+            Items      = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize   = pageSize
+        });
     }
 
     public async Task<Result<ListingDetailsDto>> GetByIdAsync(Guid id, string lang)
@@ -190,56 +282,6 @@ public class ListingService : IListingService
         await _listingRepository.DeleteAsync(listing);
 
         return Result<bool>.Success(true);
-    }
-
-    private static Expression<Func<Listing, bool>>? BuildFilterExpression(ListingFilterDto filter)
-    {
-        var predicates = new List<Expression<Func<Listing, bool>>>();
-
-        if (filter.CityId.HasValue)
-            predicates.Add(x => x.CityId == filter.CityId.Value);
-
-        if (filter.DistrictId.HasValue)
-            predicates.Add(x => x.DistrictId == filter.DistrictId.Value);
-
-        if (filter.MinPrice.HasValue)
-            predicates.Add(x => x.Price >= filter.MinPrice.Value);
-
-        if (filter.MaxPrice.HasValue)
-            predicates.Add(x => x.Price <= filter.MaxPrice.Value);
-
-        if (filter.RoomCount.HasValue)
-            predicates.Add(x => x.RoomCount == filter.RoomCount.Value);
-
-        if (filter.ListingType.HasValue)
-            predicates.Add(x => x.ListingType == filter.ListingType.Value);
-
-        if (filter.PropertyType.HasValue)
-            predicates.Add(x => x.PropertyType == filter.PropertyType.Value);
-
-        if (filter.MinArea.HasValue)
-            predicates.Add(x => x.Area >= filter.MinArea.Value);
-
-        if (filter.MaxArea.HasValue)
-            predicates.Add(x => x.Area <= filter.MaxArea.Value);
-
-        if (filter.RepairStatus.HasValue)
-            predicates.Add(x => x.RepairStatus == filter.RepairStatus.Value);
-
-        if (predicates.Count == 0)
-            return null;
-
-        // Combine predicates with AND
-        var parameter = Expression.Parameter(typeof(Listing), "x");
-        Expression? combined = null;
-
-        foreach (var predicate in predicates)
-        {
-            var body = Expression.Invoke(predicate, parameter);
-            combined = combined == null ? body : Expression.AndAlso(combined, body);
-        }
-
-        return Expression.Lambda<Func<Listing, bool>>(combined!, parameter);
     }
 
     private static string? GetTranslatedName<T>(IEnumerable<T>? translations, string lang)

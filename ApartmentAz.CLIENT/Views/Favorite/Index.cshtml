@@ -72,7 +72,17 @@ else
     <script>
         async function removeFavorite(listingId, btn) {
             const res = await fetch(`/Favorite/Toggle?listingId=${listingId}&isFavorite=true`, { method: 'POST' });
-            if (res.ok) btn.closest('.col').remove();
+            if (res.ok) {
+                const col = btn.closest('.col');
+                col.style.transition = 'opacity .3s, transform .3s';
+                col.style.opacity = '0';
+                col.style.transform = 'scale(.92)';
+                setTimeout(() => {
+                    col.remove();
+                    const remaining = document.querySelectorAll('.card-listing').length;
+                    if (remaining === 0) location.reload();
+                }, 300);
+            }
         }
     </script>
 }

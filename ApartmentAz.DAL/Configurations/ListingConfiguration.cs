@@ -8,7 +8,9 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
     {
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Price).IsRequired();
+        builder.Property(x => x.Price)
+            .IsRequired()
+            .HasPrecision(18, 2); // 🔥 FIX BURDADIR
 
         builder.HasOne(x => x.City)
             .WithMany()

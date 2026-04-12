@@ -1,5 +1,6 @@
 using ApartmentAz.CLIENT.ViewModels.Listing;
 using ApartmentAz.CLIENT.ViewModels.Location;
+using System.Text.Json.Serialization;
 
 namespace ApartmentAz.CLIENT.Services;
 
@@ -9,24 +10,35 @@ public class ApiListingService
 
     public ApiListingService(HttpClient http) => _http = http;
 
-    public async Task<List<ListingCardViewModel>> GetAllAsync(ListingFilterViewModel filter, string lang = "az")
+    public async Task<PagedApiResult<ListingCardViewModel>> GetAllAsync(ListingFilterViewModel filter, string lang = "az")
     {
-        var query = $"api/listings?lang={lang}";
-        if (filter.CityId.HasValue) query += $"&cityId={filter.CityId}";
-        if (filter.DistrictId.HasValue) query += $"&districtId={filter.DistrictId}";
-        if (filter.MinPrice.HasValue) query += $"&minPrice={filter.MinPrice}";
-        if (filter.MaxPrice.HasValue) query += $"&maxPrice={filter.MaxPrice}";
-        if (filter.RoomCount.HasValue) query += $"&roomCount={filter.RoomCount}";
-        if (filter.ListingType.HasValue) query += $"&listingType={filter.ListingType}";
-        if (filter.PropertyType.HasValue) query += $"&propertyType={filter.PropertyType}";
-        if (filter.MinArea.HasValue) query += $"&minArea={filter.MinArea}";
-        if (filter.MaxArea.HasValue) query += $"&maxArea={filter.MaxArea}";
-        if (filter.RepairStatus.HasValue) query += $"&repairStatus={filter.RepairStatus}";
-        if (!string.IsNullOrEmpty(filter.SortBy)) query += $"&sortBy={filter.SortBy}";
+        // Use InvariantCulture for all numeric params to prevent comma decimal separators
+        // from corrupting the query string on non-English locale servers (e.g. az-AZ, tr-TR)
+        var q = new System.Text.StringBuilder();
+        q.Append("api/listings?lang=").Append(Uri.EscapeDataString(lang));
 
-        var result = await _http.GetFromJsonAsync<List<ListingCardViewModel>>(query) ?? [];
-        foreach (var item in result)
+        if (filter.CityId.HasValue)       q.Append("&cityId=").Append(filter.CityId);
+        if (filter.DistrictId.HasValue)   q.Append("&districtId=").Append(filter.DistrictId);
+        if (filter.MetroId.HasValue)      q.Append("&metroId=").Append(filter.MetroId);
+        if (filter.MinPrice.HasValue)     q.Append("&minPrice=").Append(filter.MinPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (filter.MaxPrice.HasValue)     q.Append("&maxPrice=").Append(filter.MaxPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (filter.RoomCount.HasValue)    q.Append("&roomCount=").Append(filter.RoomCount.Value);
+        if (filter.ListingType.HasValue)  q.Append("&listingType=").Append(filter.ListingType.Value);
+        if (filter.PropertyType.HasValue) q.Append("&propertyType=").Append(filter.PropertyType.Value);
+        if (filter.RepairStatus.HasValue) q.Append("&repairStatus=").Append(filter.RepairStatus.Value);
+        if (filter.MinArea.HasValue)      q.Append("&minArea=").Append(filter.MinArea.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (filter.MaxArea.HasValue)      q.Append("&maxArea=").Append(filter.MaxArea.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (!string.IsNullOrWhiteSpace(filter.SortBy))
+            q.Append("&sortBy=").Append(Uri.EscapeDataString(filter.SortBy.Trim()));
+        q.Append("&pageNumber=").Append(filter.PageNumber);
+        q.Append("&pageSize=").Append(filter.PageSize);
+
+        var result = await _http.GetFromJsonAsync<PagedApiResult<ListingCardViewModel>>(q.ToString())
+                     ?? new PagedApiResult<ListingCardViewModel>();
+
+        foreach (var item in result.Items)
             item.ThumbnailUrl = ResolveImageUrl(item.ThumbnailUrl);
+
         return result;
     }
 
@@ -116,4 +128,16 @@ public class ApiListingService
         var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/') ?? string.Empty;
         return baseUrl + url;
     }
+}
+
+/// <summary>Mirrors BLL's PagedResult&lt;T&gt; for JSON deserialization in CLIENT.</summary>
+public class PagedApiResult<T>
+{
+    [JsonPropertyName("items")]      public List<T> Items      { get; set; } = [];
+    [JsonPropertyName("totalCount")] public int TotalCount     { get; set; }
+    [JsonPropertyName("pageNumber")] public int PageNumber     { get; set; }
+    [JsonPropertyName("pageSize")]   public int PageSize       { get; set; }
+    [JsonPropertyName("totalPages")] public int TotalPages     { get; set; }
+    [JsonPropertyName("hasPreviousPage")] public bool HasPreviousPage { get; set; }
+    [JsonPropertyName("hasNextPage")]     public bool HasNextPage     { get; set; }
 }

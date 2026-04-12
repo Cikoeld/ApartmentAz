@@ -49,11 +49,15 @@ public class AuthService : IAuthService
             return Result<AuthResultDto>.Failure(errors);
         }
 
+        await _userManager.AddToRoleAsync(user, "User");
+        var roles = (await _userManager.GetRolesAsync(user)).ToList();
+
         return Result<AuthResultDto>.Success(new AuthResultDto
         {
             Succeeded = true,
             UserId = user.Id,
-            Token = GenerateToken(user)
+            Token = GenerateToken(user, roles),
+            Roles = roles
         });
     }
 
@@ -63,16 +67,22 @@ public class AuthService : IAuthService
         if (user == null)
             return Result<AuthResultDto>.Failure("Invalid email or password.");
 
+        if (user.IsBanned)
+            return Result<AuthResultDto>.Failure("Your account has been banned.");
+
         var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: false);
 
         if (!result.Succeeded)
             return Result<AuthResultDto>.Failure("Invalid email or password.");
 
+        var roles = (await _userManager.GetRolesAsync(user)).ToList();
+
         return Result<AuthResultDto>.Success(new AuthResultDto
         {
             Succeeded = true,
             UserId = user.Id,
-            Token = GenerateToken(user)
+            Token = GenerateToken(user, roles),
+            Roles = roles
         });
     }
 
@@ -81,19 +91,22 @@ public class AuthService : IAuthService
         await _signInManager.SignOutAsync();
     }
 
-    private string GenerateToken(AppUser user)
+    private string GenerateToken(AppUser user, List<string> roles)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expireDays = int.TryParse(_config["Jwt:ExpireDays"], out var d) ? d : 30;
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
+
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
 
         var token = new JwtSecurityToken(
             issuer:   _config["Jwt:Issuer"],

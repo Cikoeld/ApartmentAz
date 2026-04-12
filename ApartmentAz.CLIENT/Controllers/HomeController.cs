@@ -26,14 +26,19 @@ namespace ApartmentAz.CLIENT.Controllers
         {
             var lang = ResolveLanguage();
             filter.Lang = lang;
+            if (filter.PageNumber < 1) filter.PageNumber = 1;
+            if (filter.PageSize < 1)   filter.PageSize   = 12;
 
-            var listingsTask = _listingService.GetAllAsync(filter, lang);
-            var citiesTask   = _locationService.GetCitiesAsync(lang);
+            var pagedTask  = _listingService.GetAllAsync(filter, lang);
+            var citiesTask = _locationService.GetCitiesAsync(lang);
 
-            await Task.WhenAll(listingsTask, citiesTask);
+            await Task.WhenAll(pagedTask, citiesTask);
 
-            filter.Listings = listingsTask.Result;
-            filter.Cities   = citiesTask.Result;
+            var paged = pagedTask.Result;
+            filter.Listings    = paged.Items;
+            filter.TotalCount  = paged.TotalCount;
+            filter.TotalPages  = paged.TotalPages;
+            filter.Cities      = citiesTask.Result;
 
             if (User.Identity?.IsAuthenticated == true)
             {

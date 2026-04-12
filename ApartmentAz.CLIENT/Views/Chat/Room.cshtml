@@ -1,0 +1,154 @@
+@model List<ApartmentAz.CLIENT.Services.ChatMessageApiModel>
+@{
+    ViewData["Title"] = "Chat";
+    var otherUserId = ViewBag.OtherUserId.ToString();
+    var listingId = ViewBag.ListingId.ToString();
+    var currentUserId = ViewBag.CurrentUserId?.ToString() ?? "";
+    var token = ViewBag.Token?.ToString() ?? "";
+    var apiBaseUrl = ViewBag.ApiBaseUrl?.ToString() ?? "";
+}
+
+<div class="row mb-3">
+    <div class="col">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Conversations
+        </a>
+    </div>
+</div>
+
+<div class="card" style="height: 70vh;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-chat-dots"></i> Chat</span>
+        <span id="connectionStatus" class="badge bg-secondary">Connecting...</span>
+    </div>
+    <div class="card-body overflow-auto d-flex flex-column" id="chatMessages" style="flex: 1;">
+        @foreach (var msg in Model)
+        {
+            var isMine = msg.SenderId.ToString() == currentUserId;
+            <div class="d-flex @(isMine ? "justify-content-end" : "justify-content-start") mb-2">
+                <div class="p-2 rounded-3 @(isMine ? "bg-primary text-white" : "bg-light")"
+                     style="max-width: 70%; word-wrap: break-word;">
+                    <small class="d-block fw-bold">@(isMine ? "You" : msg.SenderName)</small>
+                    <span>@msg.Content</span>
+                    <small class="d-block text-end @(isMine ? "text-white-50" : "text-muted")" style="font-size: 0.7rem;">
+                        @msg.CreatedAt.ToString("HH:mm")
+                    </small>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="card-footer">
+        <form id="chatForm" class="d-flex gap-2">
+            <input type="text" id="messageInput" class="form-control"
+                   placeholder="Type a message..." autocomplete="off" maxlength="2000" />
+            <button type="submit" class="btn btn-primary" id="sendBtn">
+                <i class="bi bi-send"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+<script>
+    const currentUserId = '@Html.Raw(currentUserId)';
+    const otherUserId = '@Html.Raw(otherUserId)';
+    const listingId = '@Html.Raw(listingId)';
+    const token = '@Html.Raw(token)';
+    const apiBaseUrl = '@Html.Raw(apiBaseUrl)';
+
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusBadge = document.getElementById('connectionStatus');
+
+    // Auto-scroll to bottom
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Append message to chat
+    function appendMessage(msg) {
+        const isMine = msg.senderId === currentUserId;
+        const div = document.createElement('div');
+        div.className = `d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'} mb-2`;
+        const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        div.innerHTML = `
+            <div class="p-2 rounded-3 ${isMine ? 'bg-primary text-white' : 'bg-light'}" style="max-width: 70%; word-wrap: break-word;">
+                <small class="d-block fw-bold">${isMine ? 'You' : escapeHtml(msg.senderName)}</small>
+                <span>${escapeHtml(msg.content)}</span>
+                <small class="d-block text-end ${isMine ? 'text-white-50' : 'text-muted'}" style="font-size: 0.7rem;">${time}</small>
+            </div>`;
+        chatMessages.appendChild(div);
+        scrollToBottom();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // SignalR connection
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${apiBaseUrl}/hubs/chat?access_token=${encodeURIComponent(token)}`)
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveMessage', (msg) => {
+        // Only show messages for this conversation
+        if (msg.listingId === listingId &&
+            ((msg.senderId === currentUserId && msg.receiverId === otherUserId) ||
+             (msg.senderId === otherUserId && msg.receiverId === currentUserId))) {
+            appendMessage(msg);
+        }
+    });
+
+    connection.onreconnecting(() => {
+        statusBadge.className = 'badge bg-warning';
+        statusBadge.textContent = 'Reconnecting...';
+    });
+
+    connection.onreconnected(() => {
+        statusBadge.className = 'badge bg-success';
+        statusBadge.textContent = 'Connected';
+    });
+
+    connection.onclose(() => {
+        statusBadge.className = 'badge bg-danger';
+        statusBadge.textContent = 'Disconnected';
+    });
+
+    connection.start()
+        .then(() => {
+            statusBadge.className = 'badge bg-success';
+            statusBadge.textContent = 'Connected';
+        })
+        .catch(err => {
+            statusBadge.className = 'badge bg-danger';
+            statusBadge.textContent = 'Failed';
+            console.error('SignalR connection error:', err);
+        });
+
+    // Send message
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const content = messageInput.value.trim();
+        if (!content) return;
+
+        sendBtn.disabled = true;
+        try {
+            await connection.invoke('SendMessage', otherUserId, listingId, content);
+            messageInput.value = '';
+        } catch (err) {
+            console.error('Send error:', err);
+            alert('Failed to send message. Please try again.');
+        } finally {
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
+    });
+</script>
+}

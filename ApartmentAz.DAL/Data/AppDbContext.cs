@@ -33,6 +33,8 @@ namespace ApartmentAz.DAL.Data
 
         public DbSet<CommercialDetail> CommercialDetails { get; set; }
 
+        public DbSet<Message> Messages { get; set; }
+
         public DbSet<ResidentialComplex> ResidentialComplexes { get; set; }
         public DbSet<ResidentialComplexTranslation> ResidentialComplexTranslations { get; set; }
 

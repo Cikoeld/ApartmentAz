@@ -81,7 +81,8 @@
             <div class="card mb-3">
                 <div class="card-header">@L["Images", lang]</div>
                 <div class="card-body">
-                    <input asp-for="Images" class="form-control" type="file" multiple accept="image/*" />
+                    <input asp-for="Images" id="imageInput" class="form-control" type="file" multiple accept="image/*" />
+                    <div id="imagePreviewGrid"></div>
                 </div>
             </div>
         </div>
@@ -179,8 +180,11 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-success w-100">
-                <i class="bi bi-check-circle"></i> @L["CreateListing", lang]
+            <button type="submit" id="submitBtn" class="btn btn-success w-100">
+                <span id="submitLabel"><i class="bi bi-check-circle"></i> @L["CreateListing", lang]</span>
+                <span id="submitSpinner" class="d-none">
+                    <span class="spinner-border spinner-border-sm me-1"></span> @L["Saving", lang]...
+                </span>
             </button>
         </div>
     </div>
@@ -225,6 +229,29 @@
 
         propType?.addEventListener('change', function () {
             commercialCard.style.display = this.value === '7' ? 'block' : 'none';
+        });
+
+        // ── Image preview ────────────────────────────────────────────
+        document.getElementById('imageInput')?.addEventListener('change', function () {
+            const grid = document.getElementById('imagePreviewGrid');
+            grid.innerHTML = '';
+            [...this.files].forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    grid.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // ── Submit spinner ───────────────────────────────────────────
+        document.querySelector('form')?.addEventListener('submit', function () {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            document.getElementById('submitLabel').classList.add('d-none');
+            document.getElementById('submitSpinner').classList.remove('d-none');
         });
     </script>
 }

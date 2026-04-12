@@ -19,7 +19,10 @@ namespace ApartmentAz.CLIENT
             builder.Services.AddHttpClient<ApiAuthService>(c => c.BaseAddress = new Uri(apiBase));
             builder.Services.AddHttpClient<ApiAgencyService>(c => c.BaseAddress = new Uri(apiBase));
             builder.Services.AddHttpClient<ApiResidentialComplexService>(c => c.BaseAddress = new Uri(apiBase));
+            builder.Services.AddHttpClient<ApiAdminService>(c => c.BaseAddress = new Uri(apiBase));
+            builder.Services.AddHttpClient<ApiChatService>(c => c.BaseAddress = new Uri(apiBase));
             builder.Services.AddHttpClient<ClientTranslationService>(c => c.BaseAddress = new Uri("https://api.mymemory.translated.net/"));
+            builder.Services.AddMemoryCache();
 
             // ── Cookie Authentication ────────────────────────────────────────
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
@@ -6,9 +7,15 @@ namespace ApartmentAz.CLIENT.Services;
 public class ClientTranslationService
 {
     private static readonly string[] SupportedLanguages = ["az", "en", "ru"];
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
     private readonly HttpClient _http;
+    private readonly IMemoryCache _cache;
 
-    public ClientTranslationService(HttpClient http) => _http = http;
+    public ClientTranslationService(HttpClient http, IMemoryCache cache)
+    {
+        _http = http;
+        _cache = cache;
+    }
 
     public async Task<Dictionary<string, string>> TranslateToAllAsync(string text, string sourceLang)
     {
@@ -36,25 +43,32 @@ public class ClientTranslationService
         if (string.IsNullOrWhiteSpace(text) || fromLang == toLang)
             return text;
 
-        try
+        var cacheKey = $"translate:{text}:{fromLang}:{toLang}";
+
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var encoded = Uri.EscapeDataString(text);
-            var url = $"get?q={encoded}&langpair={fromLang}|{toLang}";
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
 
-            var response = await _http.GetFromJsonAsync<MyMemoryResponse>(url);
-
-            if (response?.ResponseStatus == 200
-                && !string.IsNullOrWhiteSpace(response.ResponseData?.TranslatedText))
+            try
             {
-                return response.ResponseData.TranslatedText;
-            }
-        }
-        catch
-        {
-            // Translation failed — fall back to original text
-        }
+                var encoded = Uri.EscapeDataString(text);
+                var url = $"get?q={encoded}&langpair={fromLang}|{toLang}";
 
-        return text;
+                var response = await _http.GetFromJsonAsync<MyMemoryResponse>(url);
+
+                if (response?.ResponseStatus == 200
+                    && !string.IsNullOrWhiteSpace(response.ResponseData?.TranslatedText))
+                {
+                    return response.ResponseData.TranslatedText;
+                }
+            }
+            catch
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+            }
+
+            return text;
+        }) ?? text;
     }
 
     private class MyMemoryResponse

@@ -62,5 +62,6 @@ namespace ApartmentAz.DAL.Models
         public CommercialDetail CommercialDetail { get; set; }
 
         public DateTime CreatedAt { get; set; }
+        public bool IsApproved { get; set; }
     }
 }

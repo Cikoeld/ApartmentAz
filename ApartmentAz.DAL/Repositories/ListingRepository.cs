@@ -24,6 +24,9 @@ namespace ApartmentAz.DAL.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public IQueryable<Listing> GetQueryable()
+            => _context.Listings.AsNoTracking();
+
         public async Task<List<Listing>> GetAllFilteredAsync(
             Expression<Func<Listing, bool>>? filter = null,
             Func<IQueryable<Listing>, IOrderedQueryable<Listing>>? orderBy = null)

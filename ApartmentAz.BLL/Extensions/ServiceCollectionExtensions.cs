@@ -9,6 +9,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddBllServices(this IServiceCollection services)
     {
+        // In-memory cache (used by TranslationService)
+        services.AddMemoryCache();
+
         // AutoMapper
         services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -21,6 +24,7 @@ public static class ServiceCollectionExtensions
 
         // Listings
         services.AddScoped<IListingService, ListingService>();
+        services.AddScoped<IAdminService, AdminService>();
 
         // Location (separate services)
         services.AddScoped<ICityService, CityService>();
@@ -35,6 +39,9 @@ public static class ServiceCollectionExtensions
 
         // Residential Complex
         services.AddScoped<IResidentialComplexService, ResidentialComplexService>();
+
+        // Chat
+        services.AddScoped<IChatService, ChatService>();
 
         // Translation (MyMemory API)
         services.AddHttpClient<ITranslationService, TranslationService>(client =>

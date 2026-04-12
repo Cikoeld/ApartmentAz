@@ -1,0 +1,351 @@
+@model ApartmentAz.CLIENT.ViewModels.Admin.DashboardViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<!-- Loading spinner (shown until page fully renders) -->
+<div id="dashboardSpinner" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted">Loading dashboard...</p>
+</div>
+
+<div id="dashboardContent" style="display:none;">
+
+@if (Model.LoadFailed)
+{
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div>
+            <strong>Error:</strong> Failed to load dashboard data from the API. Please try again later.
+            <a href="@Url.Action("Dashboard")" class="btn btn-sm btn-outline-danger ms-3">
+                <i class="bi bi-arrow-clockwise"></i> Retry
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+            <hr />
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md">
+            <div class="card text-bg-primary h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-house-door display-6"></i>
+                    <h2 class="mt-2 mb-0">@Model.TotalListings</h2>
+                    <small>Total Listings</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card text-bg-warning h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history display-6"></i>
+                    <h2 class="mt-2 mb-0">@Model.PendingListings</h2>
+                    <small>Pending</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card text-bg-success h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-6"></i>
+                    <h2 class="mt-2 mb-0">@Model.ApprovedListings</h2>
+                    <small>Approved</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card text-bg-info h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-6"></i>
+                    <h2 class="mt-2 mb-0">@Model.TotalUsers</h2>
+                    <small>Total Users</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="card text-bg-danger h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-x display-6"></i>
+                    <h2 class="mt-2 mb-0">@Model.BannedUsers</h2>
+                    <small>Banned Users</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-bar-chart"></i> Listings Created (Last 7 Days)</div>
+                <div class="card-body">
+                    <canvas id="listingsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-graph-up"></i> User Registrations (Last 6 Months)</div>
+                <div class="card-body">
+                    <canvas id="registrationsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Row -->
+    <div class="row g-4 mb-4">
+        <!-- Recent Pending Listings -->
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history"></i> Recent Pending Listings</span>
+                    <a asp-action="Listings" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentPendingListings.Count == 0)
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-check-circle display-6"></i>
+                            <p class="mt-2">No pending listings</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="pendingListingsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Price</th>
+                                        <th>City</th>
+                                        <th>Created</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var listing in Model.RecentPendingListings)
+                                    {
+                                        <tr id="listing-row-@listing.Id">
+                                            <td>@listing.Title</td>
+                                            <td>@listing.Price.ToString("N0") ₼</td>
+                                            <td>@(listing.CityName ?? "—")</td>
+                                            <td>@listing.CreatedAt.ToString("dd MMM yyyy")</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-success me-1"
+                                                        onclick="quickAction('@listing.Id', 'approve')"
+                                                        title="Approve">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger"
+                                                        onclick="quickAction('@listing.Id', 'reject')"
+                                                        title="Reject">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-people"></i> Recent Registrations</span>
+                    <a asp-action="Users" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentUsers.Count == 0)
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-person-x display-6"></i>
+                            <p class="mt-2">No recent registrations</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var user in Model.RecentUsers)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@user.FullName</strong>
+                                        <br />
+                                        <small class="text-muted">@user.Email</small>
+                                    </div>
+                                    <span class="badge bg-secondary">@user.CreatedAt.ToString("dd MMM")</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-house-door display-3 text-primary"></i>
+                    <h4 class="mt-3">Listing Moderation</h4>
+                    <p class="text-muted">Approve, reject, edit, or delete listings.</p>
+                    <a asp-action="Listings" class="btn btn-primary">
+                        <i class="bi bi-list-check"></i> Manage Listings
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-3 text-success"></i>
+                    <h4 class="mt-3">User Management</h4>
+                    <p class="text-muted">View, edit, ban, or delete user accounts.</p>
+                    <a asp-action="Users" class="btn btn-success">
+                        <i class="bi bi-person-gear"></i> Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<!-- Toast notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+    <div id="actionToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="bi bi-bell me-2"></i>
+            <strong class="me-auto" id="toastTitle">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastBody"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    // ── Hide spinner, show content ──────────────────────────────────────
+    document.getElementById('dashboardSpinner').style.display = 'none';
+    document.getElementById('dashboardContent').style.display = 'block';
+
+    @if (!Model.LoadFailed)
+    {
+        // ── Chart.js: Listings per day ──────────────────────────────────
+        <text>
+        new Chart(document.getElementById('listingsChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(JsonSerializer.Serialize(Model.ListingsPerDayLabels)),
+                datasets: [{
+                    label: 'Listings',
+                    data: @Html.Raw(JsonSerializer.Serialize(Model.ListingsPerDayValues)),
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+
+        // ── Chart.js: Registrations per month ───────────────────────────
+        new Chart(document.getElementById('registrationsChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(JsonSerializer.Serialize(Model.RegistrationsPerMonthLabels)),
+                datasets: [{
+                    label: 'Registrations',
+                    data: @Html.Raw(JsonSerializer.Serialize(Model.RegistrationsPerMonthValues)),
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+        </text>
+    }
+
+    // ── Quick Approve / Reject ──────────────────────────────────────────
+    function quickAction(id, action) {
+        const url = action === 'approve'
+            ? `@Url.Action("ApproveListing", "Admin")?id=${id}`
+            : `@Url.Action("RejectListing", "Admin")?id=${id}`;
+
+        const row = document.getElementById(`listing-row-${id}`);
+        const buttons = row?.querySelectorAll('button');
+        buttons?.forEach(b => { b.disabled = true; });
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                row?.remove();
+                showToast(
+                    action === 'approve' ? 'Approved' : 'Rejected',
+                    `Listing has been ${action === 'approve' ? 'approved' : 'rejected'} successfully.`,
+                    action === 'approve' ? 'text-bg-success' : 'text-bg-warning'
+                );
+                // Check if table is now empty
+                const tbody = document.querySelector('#pendingListingsTable tbody');
+                if (tbody && tbody.children.length === 0) {
+                    tbody.closest('.table-responsive').innerHTML =
+                        '<div class="text-center text-muted py-4"><i class="bi bi-check-circle display-6"></i><p class="mt-2">No pending listings</p></div>';
+                }
+            } else {
+                buttons?.forEach(b => { b.disabled = false; });
+                showToast('Error', 'Action failed. Please try again.', 'text-bg-danger');
+            }
+        })
+        .catch(() => {
+            buttons?.forEach(b => { b.disabled = false; });
+            showToast('Error', 'Network error. Please try again.', 'text-bg-danger');
+        });
+    }
+
+    function showToast(title, body, cssClass) {
+        const toastEl = document.getElementById('actionToast');
+        const header = toastEl.querySelector('.toast-header');
+        header.className = `toast-header ${cssClass || ''}`;
+        document.getElementById('toastTitle').textContent = title;
+        document.getElementById('toastBody').textContent = body;
+        new bootstrap.Toast(toastEl, { delay: 3000 }).show();
+    }
+</script>
+}

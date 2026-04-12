@@ -31,17 +31,17 @@
             </div>
         }
 
-        <h3>@Model.Title</h3>
-        <p class="text-muted">@Model.Description</p>
+        <h3 class="fw-semibold mt-2 mb-1">@Model.Title</h3>
+        <p class="text-muted mb-3">@Model.Description</p>
 
-        <h5 class="mt-4">@L["Details", lang]</h5>
-        <table class="table table-bordered table-hover">
-            <tr><td class="text-muted">@L["Price", lang]</td><td class="fw-bold text-primary">@Model.Price.ToString("N0") ₼</td></tr>
-            <tr><td class="text-muted">@L["Rooms", lang]</td><td>@Model.RoomCount</td></tr>
-            <tr><td class="text-muted">@L["Area", lang]</td><td>@Model.Area m²</td></tr>
-            <tr><td class="text-muted">@L["Floor", lang]</td><td>@Model.Floor / @Model.TotalFloors</td></tr>
-            <tr><td class="text-muted">@L["Document", lang]</td><td>@(Model.HasDocument ? $"✅ {L["Yes", lang]}" : $"❌ {L["No", lang]}")</td></tr>
-            <tr><td class="text-muted">@L["Mortgage", lang]</td><td>@(Model.HasMortgage ? $"✅ {L["Yes", lang]}" : $"❌ {L["No", lang]}")</td></tr>
+        <h5 class="mt-4 mb-3 fw-semibold">@L["Details", lang]</h5>
+        <table class="table table-borderless detail-table">
+            <tr><td><i class="bi bi-currency-exchange"></i>@L["Price", lang]</td><td class="fw-bold text-primary fs-5">@Model.Price.ToString("N0") ₼</td></tr>
+            <tr><td><i class="bi bi-door-open"></i>@L["Rooms", lang]</td><td>@Model.RoomCount</td></tr>
+            <tr><td><i class="bi bi-aspect-ratio"></i>@L["Area", lang]</td><td>@Model.Area m²</td></tr>
+            <tr><td><i class="bi bi-building-up"></i>@L["Floor", lang]</td><td>@Model.Floor / @Model.TotalFloors</td></tr>
+            <tr><td><i class="bi bi-file-earmark-check"></i>@L["Document", lang]</td><td>@(Model.HasDocument ? "✅" : "❌")</td></tr>
+            <tr><td><i class="bi bi-bank"></i>@L["Mortgage", lang]</td><td>@(Model.HasMortgage ? "✅" : "❌")</td></tr>
         </table>
 
         @if (Model.CommercialDetail != null)
@@ -56,7 +56,7 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card mb-3">
+        <div class="sidebar-sticky d-flex flex-column gap-3">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-geo-alt"></i> @L["Location", lang]</h5>
                 <p class="mb-1">@L["City", lang]: <strong>@Model.CityName</strong></p>
@@ -100,13 +100,13 @@
             </div>
         }
 
-        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary w-100">
             <i class="bi bi-arrow-left"></i> @L["BackToListings", lang]
         </a>
 
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <button class="btn @(Model.IsFavorited ? "btn-danger" : "btn-outline-danger") w-100 mt-2"
+            <button class="btn @(Model.IsFavorited ? "btn-danger" : "btn-outline-danger") w-100"
                     onclick="toggleFavorite('@Model.Id', this)"
                     data-fav="@Model.IsFavorited.ToString().ToLower()">
                 <i class="bi @(Model.IsFavorited ? "bi-heart-fill" : "bi-heart")"></i>
@@ -115,19 +115,20 @@
         }
         else
         {
-            <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-danger w-100 mt-2">
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-danger w-100">
                 <i class="bi bi-heart"></i> @L["SaveToFavorites", lang]
             </a>
         }
 
         @if (Model.IsOwner)
         {
-            <form asp-controller="Listing" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-2"
+            <form asp-controller="Listing" asp-action="Delete" asp-route-id="@Model.Id" method="post"
                   onsubmit="return confirm('@L["ConfirmDelete", lang]')">
                 <button type="submit" class="btn btn-outline-danger w-100">
                     <i class="bi bi-trash"></i> @L["DeleteListing", lang]
                 </button>
             </form>
         }
+        </div>
     </div>
 </div>

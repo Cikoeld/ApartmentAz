@@ -61,6 +61,9 @@ namespace ApartmentAz.DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -72,6 +75,9 @@ namespace ApartmentAz.DAL.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsBanned")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -280,6 +286,9 @@ namespace ApartmentAz.DAL.Migrations
                     b.Property<bool>("HasMortgage")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ListingType")
                         .HasColumnType("int");
 
@@ -295,6 +304,7 @@ namespace ApartmentAz.DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("PropertyType")
@@ -385,6 +395,45 @@ namespace ApartmentAz.DAL.Migrations
                         .IsUnique();
 
                     b.ToTable("ListingTranslations");
+                });
+
+            modelBuilder.Entity("ApartmentAz.DAL.Models.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId", "ReceiverId", "ListingId");
+
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("ApartmentAz.DAL.Models.Metro", b =>
@@ -732,6 +781,33 @@ namespace ApartmentAz.DAL.Migrations
                     b.Navigation("Listing");
                 });
 
+            modelBuilder.Entity("ApartmentAz.DAL.Models.Message", b =>
+                {
+                    b.HasOne("ApartmentAz.DAL.Models.Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ApartmentAz.DAL.Models.AppUser", "Receiver")
+                        .WithMany("ReceivedMessages")
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ApartmentAz.DAL.Models.AppUser", "Sender")
+                        .WithMany("SentMessages")
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Listing");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("ApartmentAz.DAL.Models.Metro", b =>
                 {
                     b.HasOne("ApartmentAz.DAL.Models.City", "City")
@@ -820,6 +896,10 @@ namespace ApartmentAz.DAL.Migrations
             modelBuilder.Entity("ApartmentAz.DAL.Models.AppUser", b =>
                 {
                     b.Navigation("Listings");
+
+                    b.Navigation("ReceivedMessages");
+
+                    b.Navigation("SentMessages");
                 });
 
             modelBuilder.Entity("ApartmentAz.DAL.Models.City", b =>

@@ -11,6 +11,13 @@ public class UILocalizer
         ["Logout"] = new() { ["az"] = "Çıxış", ["en"] = "Logout", ["ru"] = "Выход" },
         ["Login"] = new() { ["az"] = "Giriş", ["en"] = "Login", ["ru"] = "Вход" },
         ["Register"] = new() { ["az"] = "Qeydiyyat", ["en"] = "Register", ["ru"] = "Регистрация" },
+        ["AdminPanel"] = new() { ["az"] = "Admin Panel", ["en"] = "Admin Panel", ["ru"] = "Админ панель" },
+
+        // ── Listing results ─────────────────────────────────────────
+        ["NoListingsFound"] = new() { ["az"] = "Elan tapılmadı", ["en"] = "No listings found", ["ru"] = "Объявления не найдены" },
+        ["TryDifferentFilters"] = new() { ["az"] = "Fərqli filterlər sınayın", ["en"] = "Try different filters", ["ru"] = "Попробуйте другие фильтры" },
+        ["ShowingResults"] = new() { ["az"] = "Nəticələr", ["en"] = "Results", ["ru"] = "Результатов" },
+        ["Saving"] = new() { ["az"] = "Saxlanılır", ["en"] = "Saving", ["ru"] = "Сохранение" },
 
         // ── Filter labels ───────────────────────────────────────────
         ["City"] = new() { ["az"] = "Şəhər", ["en"] = "City", ["ru"] = "Город" },
