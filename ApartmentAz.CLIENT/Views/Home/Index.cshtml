@@ -1,0 +1,173 @@
+﻿@model ListingFilterViewModel
+@{
+    ViewData["Title"] = L["Listings_Title", Model.Lang];
+    var lang = Model.Lang;
+}
+
+<div class="hero-filter mb-4">
+    <form method="get" asp-action="Index" asp-controller="Home" class="row g-3 align-items-end">
+        <input type="hidden" name="Lang" id="langInput" value="@lang" />
+        <div class="col-md-2">
+            <label class="form-label">@L["City", lang]</label>
+            <select name="CityId" id="citySelect" class="form-select">
+                <option value="">@L["All", lang]</option>
+                @foreach (var c in Model.Cities)
+                {
+                    <option value="@c.Id" selected="@(Model.CityId == c.Id)">@c.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["District", lang]</label>
+            <select name="DistrictId" id="districtSelect" class="form-select">
+                <option value="">@L["All", lang]</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["ListingType", lang]</label>
+            <select name="ListingType" class="form-select">
+                <option value="">@L["All", lang]</option>
+                <option value="1" selected="@(Model.ListingType == 1)">@L["Sale", lang]</option>
+                <option value="2" selected="@(Model.ListingType == 2)">@L["Rent", lang]</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["PropertyType", lang]</label>
+            <select name="PropertyType" class="form-select">
+                <option value="">@L["All", lang]</option>
+                <option value="1" selected="@(Model.PropertyType == 1)">@L["NewBuilding", lang]</option>
+                <option value="2" selected="@(Model.PropertyType == 2)">@L["OldBuilding", lang]</option>
+                <option value="3" selected="@(Model.PropertyType == 3)">@L["House", lang]</option>
+                <option value="4" selected="@(Model.PropertyType == 4)">@L["Office", lang]</option>
+                <option value="5" selected="@(Model.PropertyType == 5)">@L["Garage", lang]</option>
+                <option value="6" selected="@(Model.PropertyType == 6)">@L["Land", lang]</option>
+                <option value="7" selected="@(Model.PropertyType == 7)">@L["Commercial", lang]</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["RepairStatus", lang]</label>
+            <select name="RepairStatus" class="form-select">
+                <option value="">@L["All", lang]</option>
+                <option value="0" selected="@(Model.RepairStatus == 0)">@L["None", lang]</option>
+                <option value="1" selected="@(Model.RepairStatus == 1)">@L["Repaired", lang]</option>
+                <option value="2" selected="@(Model.RepairStatus == 2)">@L["NotRepaired", lang]</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">@L["Rooms", lang]</label>
+            <input type="number" name="RoomCount" value="@Model.RoomCount" class="form-control" min="1" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["MinPrice", lang]</label>
+            <input type="number" name="MinPrice" value="@Model.MinPrice" class="form-control" placeholder="0" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["MaxPrice", lang]</label>
+            <input type="number" name="MaxPrice" value="@Model.MaxPrice" class="form-control" placeholder="999999" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["MinArea", lang]</label>
+            <input type="number" name="MinArea" value="@Model.MinArea" class="form-control" step="0.1" placeholder="0" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["MaxArea", lang]</label>
+            <input type="number" name="MaxArea" value="@Model.MaxArea" class="form-control" step="0.1" placeholder="999" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">@L["SortBy", lang]</label>
+            <select name="SortBy" class="form-select">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.SortBy))">@L["Newest", lang]</option>
+                <option value="priceasc" selected="@(Model.SortBy == "priceasc")">@L["PriceAsc", lang]</option>
+                <option value="pricedesc" selected="@(Model.SortBy == "pricedesc")">@L["PriceDesc", lang]</option>
+                <option value="areaasc" selected="@(Model.SortBy == "areaasc")">@L["AreaAsc", lang]</option>
+                <option value="areadesc" selected="@(Model.SortBy == "areadesc")">@L["AreaDesc", lang]</option>
+                <option value="oldest" selected="@(Model.SortBy == "oldest")">@L["Oldest", lang]</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i></button>
+        </div>
+    </form>
+</div>
+
+@if (Model.Listings.Count == 0)
+{
+    <div class="alert alert-info">@L["NoListingsFound", lang]</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var item in Model.Listings)
+        {
+            <div class="col">
+                <div class="card card-listing h-100">
+                    @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                    {
+                        <img src="@item.ThumbnailUrl" class="card-img-top" style="height:200px;object-fit:cover;" alt="@item.Title" />
+                    }
+                    else
+                    {
+                        <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height:200px;">
+                            <i class="bi bi-image" style="font-size:3rem;"></i>
+                        </div>
+                    }
+                    <div class="card-body">
+                        <h6 class="card-title mb-1">@item.Title</h6>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-geo-alt"></i> @item.CityName @(item.DistrictName != null ? $", {item.DistrictName}" : "")
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-primary fs-5">@item.Price.ToString("N0") ₼</span>
+                            <span class="badge bg-secondary">@item.RoomCount @L["Room", lang] · @item.Area m²</span>
+                        </div>
+                    </div>
+                    <div class="card-footer border-0 d-flex gap-2">
+                        <a asp-controller="Listing" asp-action="Details" asp-route-id="@item.Id" asp-route-lang="@Model.Lang" class="btn btn-outline-primary btn-sm flex-fill">
+                            <i class="bi bi-eye"></i> @L["ViewDetails", lang]
+                        </a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            var isFav = Model.FavoriteListingIds.Contains(item.Id);
+                            <button class="btn btn-sm @(isFav ? "btn-danger" : "btn-outline-danger")"
+                                    onclick="toggleFavorite('@item.Id', this)"
+                                    data-fav="@isFav.ToString().ToLower()"
+                                    title="@(isFav ? L["RemoveFromFavorites", lang] : L["SaveToFavorites", lang])">
+                                <i class="bi @(isFav ? "bi-heart-fill" : "bi-heart")"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <a asp-controller="Auth" asp-action="Login" class="btn btn-sm btn-outline-danger" title="@L["Login", lang]">
+                                <i class="bi bi-heart"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const citySelect = document.getElementById('citySelect');
+        const districtSelect = document.getElementById('districtSelect');
+        const langInput = document.getElementById('langInput');
+        const lang = langInput?.value || 'az';
+
+        citySelect?.addEventListener('change', async function () {
+            const cityId = this.value;
+            districtSelect.innerHTML = '<option value="">@L["All", lang]</option>';
+            if (!cityId) return;
+
+            const res = await fetch(`/Home/GetDistricts?cityId=${cityId}&lang=${lang}`);
+            const data = await res.json();
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                districtSelect.appendChild(opt);
+            });
+        });
+    </script>
+}

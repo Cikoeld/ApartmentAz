@@ -1,0 +1,133 @@
+@model ListingDetailsViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var lang = (Context.Request.Query.TryGetValue("lang", out var ql) && !string.IsNullOrWhiteSpace(ql))
+        ? ql.ToString()
+        : (Context.Request.Cookies.TryGetValue("lang", out var cl) && !string.IsNullOrWhiteSpace(cl) ? cl : "az");
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        @if (Model.ImageUrls.Count > 0)
+        {
+            <div id="imageCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                <div class="carousel-inner rounded">
+                    @for (int i = 0; i < Model.ImageUrls.Count; i++)
+                    {
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <img src="@Model.ImageUrls[i]" class="d-block w-100" style="height:400px;object-fit:cover;" alt="Image @(i+1)" />
+                        </div>
+                    }
+                </div>
+                @if (Model.ImageUrls.Count > 1)
+                {
+                    <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                }
+            </div>
+        }
+
+        <h3>@Model.Title</h3>
+        <p class="text-muted">@Model.Description</p>
+
+        <h5 class="mt-4">@L["Details", lang]</h5>
+        <table class="table table-bordered table-hover">
+            <tr><td class="text-muted">@L["Price", lang]</td><td class="fw-bold text-primary">@Model.Price.ToString("N0") ₼</td></tr>
+            <tr><td class="text-muted">@L["Rooms", lang]</td><td>@Model.RoomCount</td></tr>
+            <tr><td class="text-muted">@L["Area", lang]</td><td>@Model.Area m²</td></tr>
+            <tr><td class="text-muted">@L["Floor", lang]</td><td>@Model.Floor / @Model.TotalFloors</td></tr>
+            <tr><td class="text-muted">@L["Document", lang]</td><td>@(Model.HasDocument ? $"✅ {L["Yes", lang]}" : $"❌ {L["No", lang]}")</td></tr>
+            <tr><td class="text-muted">@L["Mortgage", lang]</td><td>@(Model.HasMortgage ? $"✅ {L["Yes", lang]}" : $"❌ {L["No", lang]}")</td></tr>
+        </table>
+
+        @if (Model.CommercialDetail != null)
+        {
+            <h5>@L["CommercialDetails", lang]</h5>
+            <ul class="list-group mb-3">
+                <li class="list-group-item">@L["Parking", lang]: @(Model.CommercialDetail.HasParking ? "✅" : "❌")</li>
+                <li class="list-group-item">@L["Heating", lang]: @(Model.CommercialDetail.HasHeating ? "✅" : "❌")</li>
+                <li class="list-group-item">@L["AirConditioner", lang]: @(Model.CommercialDetail.HasAirConditioner ? "✅" : "❌")</li>
+            </ul>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-geo-alt"></i> @L["Location", lang]</h5>
+                <p class="mb-1">@L["City", lang]: <strong>@Model.CityName</strong></p>
+                @if (Model.DistrictName != null)
+                {
+                    <p class="mb-1">@L["District", lang]: <strong>@Model.DistrictName</strong></p>
+                }
+                @if (Model.MetroName != null)
+                {
+                    <p class="mb-1">@L["Metro", lang]: <strong>@Model.MetroName</strong></p>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-person"></i> @L["Contact", lang]</h5>
+                <p class="mb-1">@Model.Name</p>
+                <p class="mb-1"><i class="bi bi-telephone"></i> @Model.Phone</p>
+                <p class="mb-0"><i class="bi bi-envelope"></i> @Model.Email</p>
+            </div>
+        </div>
+
+        @if (Model.AgencyName != null)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-building"></i> @L["Agency", lang]</h5>
+                    <p class="mb-0">@Model.AgencyName</p>
+                </div>
+            </div>
+        }
+
+        @if (Model.ResidentialComplexName != null)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-buildings"></i> @L["ResidentialComplex", lang]</h5>
+                    <p class="mb-0">@Model.ResidentialComplexName</p>
+                </div>
+            </div>
+        }
+
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">
+            <i class="bi bi-arrow-left"></i> @L["BackToListings", lang]
+        </a>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button class="btn @(Model.IsFavorited ? "btn-danger" : "btn-outline-danger") w-100 mt-2"
+                    onclick="toggleFavorite('@Model.Id', this)"
+                    data-fav="@Model.IsFavorited.ToString().ToLower()">
+                <i class="bi @(Model.IsFavorited ? "bi-heart-fill" : "bi-heart")"></i>
+                <span>@(Model.IsFavorited ? L["RemoveFromFavorites", lang] : L["SaveToFavorites", lang])</span>
+            </button>
+        }
+        else
+        {
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-danger w-100 mt-2">
+                <i class="bi bi-heart"></i> @L["SaveToFavorites", lang]
+            </a>
+        }
+
+        @if (Model.IsOwner)
+        {
+            <form asp-controller="Listing" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-2"
+                  onsubmit="return confirm('@L["ConfirmDelete", lang]')">
+                <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-trash"></i> @L["DeleteListing", lang]
+                </button>
+            </form>
+        }
+    </div>
+</div>

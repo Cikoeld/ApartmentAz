@@ -1,0 +1,92 @@
+/* ── Base ──────────────────────────────────────────────────────── */
+html {
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+}
+@media (min-width: 768px) {
+    html { font-size: 16px; }
+}
+body {
+    margin-bottom: 60px;
+    transition: background-color .25s, color .25s;
+}
+
+/* ── Navbar ────────────────────────────────────────────────────── */
+#mainNav {
+    background-color: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+    box-shadow: 0 1px 6px rgba(0,0,0,.08);
+}
+
+/* ── Listing cards ─────────────────────────────────────────────── */
+.card-listing {
+    transition: transform .2s, box-shadow .2s;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .75rem;
+    overflow: hidden;
+}
+.card-listing:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+}
+.card-listing .card-img-top {
+    transition: transform .35s ease;
+}
+.card-listing:hover .card-img-top {
+    transform: scale(1.04);
+}
+
+/* ── Filter bar ────────────────────────────────────────────────── */
+.hero-filter {
+    background: var(--bs-tertiary-bg);
+    padding: 1.25rem 1.5rem;
+    border-radius: .75rem;
+    border: 1px solid var(--bs-border-color);
+}
+
+/* ── Focus rings ───────────────────────────────────────────────── */
+.btn:focus, .btn:active:focus,
+.form-control:focus, .form-check-input:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.1rem var(--bs-body-bg), 0 0 0 0.25rem var(--bs-primary);
+}
+
+/* ── Theme toggle button ───────────────────────────────────────── */
+#themeToggle {
+    color: var(--bs-navbar-color);
+    transition: color .2s;
+}
+#themeToggle:hover {
+    color: var(--bs-navbar-hover-color);
+}
+
+/* ── Footer ────────────────────────────────────────────────────── */
+footer {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-secondary-color);
+    border-color: var(--bs-border-color) !important;
+}
+
+/* ── Auth card ─────────────────────────────────────────────────── */
+.auth-card {
+    border-radius: 1rem;
+    border: 1px solid var(--bs-border-color);
+}
+.auth-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bs-primary-bg-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────── */
+[data-bs-theme="dark"] #mainNav {
+    box-shadow: 0 1px 6px rgba(0,0,0,.35);
+}
+[data-bs-theme="dark"] .card-listing:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
