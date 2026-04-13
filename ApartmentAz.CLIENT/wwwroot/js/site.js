@@ -1,4 +1,8 @@
-﻿// ── Shared helpers ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// ApartmentAz — Shared JS  (interactions, theme, helpers)
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Shared helpers ───────────────────────────────────────────────
 
 async function loadOptions(url, selectElement, placeholder) {
     selectElement.innerHTML = `<option value="">${placeholder}</option>`;
@@ -16,6 +20,8 @@ async function loadOptions(url, selectElement, placeholder) {
     }
 }
 
+// ── Toggle Favorite ──────────────────────────────────────────────
+
 async function toggleFavorite(listingId, btn) {
     const isFav = btn.dataset.fav === 'true';
     try {
@@ -25,20 +31,24 @@ async function toggleFavorite(listingId, btn) {
         const nowFav = !isFav;
         btn.dataset.fav = nowFav.toString();
 
-        // Icon
         const icon = btn.querySelector('i');
         if (icon) icon.className = nowFav ? 'bi bi-heart-fill' : 'bi bi-heart';
 
-        // Text label (only on detail page button)
         const span = btn.querySelector('span');
         if (span) span.textContent = nowFav ? 'Remove from Favorites' : 'Save to Favorites';
 
-        // Button variant
-        if (nowFav) {
-            btn.classList.replace('btn-outline-danger', 'btn-danger');
+        // Card overlay button (round)
+        if (btn.classList.contains('card-fav-btn')) {
+            btn.classList.toggle('active', nowFav);
         } else {
-            btn.classList.replace('btn-danger', 'btn-outline-danger');
+            // Detail page full-width button
+            if (nowFav) btn.classList.replace('btn-outline-danger', 'btn-danger');
+            else btn.classList.replace('btn-danger', 'btn-outline-danger');
         }
+
+        // Pulse animation
+        btn.style.transform = 'scale(1.2)';
+        setTimeout(() => { btn.style.transform = ''; }, 200);
     } catch (e) {
         console.error('Failed to toggle favorite:', e);
     }
@@ -61,8 +71,19 @@ function updateThemeIcon(theme) {
     icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 
-// Sync the icon on every page load
+// ── On DOM ready ─────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Sync theme icon
     const saved = localStorage.getItem('theme') || 'light';
     updateThemeIcon(saved);
+
+    // Add stat-card top stripe color
+    document.querySelectorAll('.admin-stat-card').forEach(card => {
+        const color = card.style.getPropertyValue('--stripe');
+        if (color && card.querySelector('::before') === null) {
+            const before = card.querySelector('.card-body');
+            if (before) card.style.borderTop = `4px solid ${color}`;
+        }
+    });
 });

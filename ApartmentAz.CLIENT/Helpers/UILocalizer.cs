@@ -129,6 +129,17 @@ public class UILocalizer
         ["BrowseListingsHint"] = new() { ["az"] = "Elanlara baxın və ♡ işarəsinə basaraq burada saxlayın.", ["en"] = "Browse listings and tap the ♡ to save them here.", ["ru"] = "Просматривайте объявления и нажмите ♡, чтобы сохранить их здесь." },
         ["BrowseListings"] = new() { ["az"] = "Elanlara bax", ["en"] = "Browse Listings", ["ru"] = "Просмотреть объявления" },
 
+        // ── Hero / Home ────────────────────────────────────────────
+        ["FindYourDreamHome"] = new() { ["az"] = "Xəyal etdiyiniz evi tapın", ["en"] = "Find your dream home", ["ru"] = "Найдите дом своей мечты" },
+        ["HeroSubtitle"] = new() { ["az"] = "Azərbaycanda ən yaxşı mənzil və əmlak elanları", ["en"] = "Browse the best apartments and real estate listings in Azerbaijan", ["ru"] = "Лучшие объявления квартир и недвижимости в Азербайджане" },
+
+        // ── Auth ───────────────────────────────────────────────────
+        ["CreateAccount"] = new() { ["az"] = "Hesab yaradın", ["en"] = "Create Account", ["ru"] = "Создать аккаунт" },
+        ["JoinApartmentAz"] = new() { ["az"] = "ApartmentAz-a qoşulun", ["en"] = "Join ApartmentAz and start browsing", ["ru"] = "Присоединяйтесь к ApartmentAz" },
+        ["FullName"] = new() { ["az"] = "Tam ad", ["en"] = "Full Name", ["ru"] = "Полное имя" },
+        ["ConfirmPassword"] = new() { ["az"] = "Şifrəni təsdiqlə", ["en"] = "Confirm Password", ["ru"] = "Подтвердите пароль" },
+        ["AlreadyHaveAccount"] = new() { ["az"] = "Artıq hesabınız var?", ["en"] = "Already have an account?", ["ru"] = "Уже есть аккаунт?" },
+
         // ── Common ──────────────────────────────────────────────────
         ["Listings_Title"] = new() { ["az"] = "Elanlar", ["en"] = "Listings", ["ru"] = "Объявления" },
     };

@@ -6,16 +6,18 @@
         : (Context.Request.Cookies.TryGetValue("lang", out var cl) && !string.IsNullOrWhiteSpace(cl) ? cl : "az");
 }
 
-<div class="row">
+<div class="row g-4">
+    <!-- ── Left Column: Gallery + Info ────────────────────────── -->
     <div class="col-lg-8">
+        <!-- Gallery -->
         @if (Model.ImageUrls.Count > 0)
         {
-            <div id="imageCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-                <div class="carousel-inner rounded">
+            <div class="detail-gallery mb-4" id="imageCarousel" data-bs-ride="carousel">
+                <div class="carousel-inner">
                     @for (int i = 0; i < Model.ImageUrls.Count; i++)
                     {
                         <div class="carousel-item @(i == 0 ? "active" : "")">
-                            <img src="@Model.ImageUrls[i]" class="d-block w-100" style="height:400px;object-fit:cover;" alt="Image @(i+1)" />
+                            <img src="@Model.ImageUrls[i]" class="d-block w-100" alt="Image @(i+1)" />
                         </div>
                     }
                 </div>
@@ -31,104 +33,154 @@
             </div>
         }
 
-        <h3 class="fw-semibold mt-2 mb-1">@Model.Title</h3>
-        <p class="text-muted mb-3">@Model.Description</p>
+        <!-- Title + Price -->
+        <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+            <div>
+                <h3 class="fw-bold mb-1">@Model.Title</h3>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt-fill"></i> @Model.CityName
+                    @if (Model.DistrictName != null) { <text>, @Model.DistrictName</text> }
+                    @if (Model.MetroName != null) { <text> · <i class="bi bi-train-front"></i> @Model.MetroName</text> }
+                </p>
+            </div>
+            <h2 class="text-gradient fw-bold mb-0">@Model.Price.ToString("N0") ₼</h2>
+        </div>
 
-        <h5 class="mt-4 mb-3 fw-semibold">@L["Details", lang]</h5>
-        <table class="table table-borderless detail-table">
-            <tr><td><i class="bi bi-currency-exchange"></i>@L["Price", lang]</td><td class="fw-bold text-primary fs-5">@Model.Price.ToString("N0") ₼</td></tr>
-            <tr><td><i class="bi bi-door-open"></i>@L["Rooms", lang]</td><td>@Model.RoomCount</td></tr>
-            <tr><td><i class="bi bi-aspect-ratio"></i>@L["Area", lang]</td><td>@Model.Area m²</td></tr>
-            <tr><td><i class="bi bi-building-up"></i>@L["Floor", lang]</td><td>@Model.Floor / @Model.TotalFloors</td></tr>
-            <tr><td><i class="bi bi-file-earmark-check"></i>@L["Document", lang]</td><td>@(Model.HasDocument ? "✅" : "❌")</td></tr>
-            <tr><td><i class="bi bi-bank"></i>@L["Mortgage", lang]</td><td>@(Model.HasMortgage ? "✅" : "❌")</td></tr>
-        </table>
+        <!-- Property Details Grid -->
+        <div class="detail-grid mb-4">
+            <div class="detail-grid-item">
+                <i class="bi bi-door-open"></i>
+                <span class="label">@L["Rooms", lang]</span>
+                <span class="value">@Model.RoomCount</span>
+            </div>
+            <div class="detail-grid-item">
+                <i class="bi bi-aspect-ratio"></i>
+                <span class="label">@L["Area", lang]</span>
+                <span class="value">@Model.Area m²</span>
+            </div>
+            <div class="detail-grid-item">
+                <i class="bi bi-building-up"></i>
+                <span class="label">@L["Floor", lang]</span>
+                <span class="value">@Model.Floor / @Model.TotalFloors</span>
+            </div>
+            <div class="detail-grid-item">
+                <i class="bi bi-file-earmark-check"></i>
+                <span class="label">@L["Document", lang]</span>
+                <span class="value">@(Model.HasDocument ? L["Yes", lang] : L["No", lang])</span>
+            </div>
+            <div class="detail-grid-item">
+                <i class="bi bi-bank"></i>
+                <span class="label">@L["Mortgage", lang]</span>
+                <span class="value">@(Model.HasMortgage ? L["Yes", lang] : L["No", lang])</span>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="detail-info-card mb-4">
+            <div class="card-header"><i class="bi bi-text-paragraph me-2"></i>@L["DescriptionLabel", lang]</div>
+            <div class="card-body">
+                <p class="mb-0" style="line-height:1.7;">@Model.Description</p>
+            </div>
+        </div>
 
         @if (Model.CommercialDetail != null)
         {
-            <h5>@L["CommercialDetails", lang]</h5>
-            <ul class="list-group mb-3">
-                <li class="list-group-item">@L["Parking", lang]: @(Model.CommercialDetail.HasParking ? "✅" : "❌")</li>
-                <li class="list-group-item">@L["Heating", lang]: @(Model.CommercialDetail.HasHeating ? "✅" : "❌")</li>
-                <li class="list-group-item">@L["AirConditioner", lang]: @(Model.CommercialDetail.HasAirConditioner ? "✅" : "❌")</li>
-            </ul>
+            <div class="detail-info-card mb-4">
+                <div class="card-header"><i class="bi bi-shop me-2"></i>@L["CommercialDetails", lang]</div>
+                <div class="card-body">
+                    <div class="detail-grid">
+                        <div class="detail-grid-item">
+                            <i class="bi bi-p-circle"></i>
+                            <span class="label">@L["Parking", lang]</span>
+                            <span class="value">@(Model.CommercialDetail.HasParking ? "✅" : "❌")</span>
+                        </div>
+                        <div class="detail-grid-item">
+                            <i class="bi bi-thermometer-half"></i>
+                            <span class="label">@L["Heating", lang]</span>
+                            <span class="value">@(Model.CommercialDetail.HasHeating ? "✅" : "❌")</span>
+                        </div>
+                        <div class="detail-grid-item">
+                            <i class="bi bi-snow"></i>
+                            <span class="label">@L["AirConditioner", lang]</span>
+                            <span class="value">@(Model.CommercialDetail.HasAirConditioner ? "✅" : "❌")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
     </div>
 
+    <!-- ── Right Column: Sidebar ──────────────────────────────── -->
     <div class="col-lg-4">
         <div class="sidebar-sticky d-flex flex-column gap-3">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-geo-alt"></i> @L["Location", lang]</h5>
-                <p class="mb-1">@L["City", lang]: <strong>@Model.CityName</strong></p>
-                @if (Model.DistrictName != null)
-                {
-                    <p class="mb-1">@L["District", lang]: <strong>@Model.DistrictName</strong></p>
-                }
-                @if (Model.MetroName != null)
-                {
-                    <p class="mb-1">@L["Metro", lang]: <strong>@Model.MetroName</strong></p>
-                }
-            </div>
-        </div>
-
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-person"></i> @L["Contact", lang]</h5>
-                <p class="mb-1">@Model.Name</p>
-                <p class="mb-1"><i class="bi bi-telephone"></i> @Model.Phone</p>
-                <p class="mb-0"><i class="bi bi-envelope"></i> @Model.Email</p>
-            </div>
-        </div>
-
-        @if (Model.AgencyName != null)
-        {
-            <div class="card mb-3">
+            <!-- Contact -->
+            <div class="detail-info-card">
+                <div class="card-header"><i class="bi bi-person-circle me-2"></i>@L["Contact", lang]</div>
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-building"></i> @L["Agency", lang]</h5>
-                    <p class="mb-0">@Model.AgencyName</p>
+                    <p class="fw-semibold mb-1">@Model.Name</p>
+                    <p class="mb-1"><i class="bi bi-telephone-fill text-primary me-2"></i>@Model.Phone</p>
+                    <p class="mb-0"><i class="bi bi-envelope-fill text-primary me-2"></i>@Model.Email</p>
                 </div>
             </div>
-        }
 
-        @if (Model.ResidentialComplexName != null)
-        {
-            <div class="card mb-3">
+            <!-- Location -->
+            <div class="detail-info-card">
+                <div class="card-header"><i class="bi bi-geo-alt me-2"></i>@L["Location", lang]</div>
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-buildings"></i> @L["ResidentialComplex", lang]</h5>
-                    <p class="mb-0">@Model.ResidentialComplexName</p>
+                    <p class="mb-1">@L["City", lang]: <strong>@Model.CityName</strong></p>
+                    @if (Model.DistrictName != null) { <p class="mb-1">@L["District", lang]: <strong>@Model.DistrictName</strong></p> }
+                    @if (Model.MetroName != null) { <p class="mb-0">@L["Metro", lang]: <strong>@Model.MetroName</strong></p> }
                 </div>
             </div>
-        }
 
-        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary w-100">
-            <i class="bi bi-arrow-left"></i> @L["BackToListings", lang]
-        </a>
+            @if (Model.AgencyName != null)
+            {
+                <div class="detail-info-card">
+                    <div class="card-header"><i class="bi bi-building me-2"></i>@L["Agency", lang]</div>
+                    <div class="card-body"><p class="mb-0 fw-medium">@Model.AgencyName</p></div>
+                </div>
+            }
 
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <button class="btn @(Model.IsFavorited ? "btn-danger" : "btn-outline-danger") w-100"
-                    onclick="toggleFavorite('@Model.Id', this)"
-                    data-fav="@Model.IsFavorited.ToString().ToLower()">
-                <i class="bi @(Model.IsFavorited ? "bi-heart-fill" : "bi-heart")"></i>
-                <span>@(Model.IsFavorited ? L["RemoveFromFavorites", lang] : L["SaveToFavorites", lang])</span>
-            </button>
-        }
-        else
-        {
-            <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-danger w-100">
-                <i class="bi bi-heart"></i> @L["SaveToFavorites", lang]
-            </a>
-        }
+            @if (Model.ResidentialComplexName != null)
+            {
+                <div class="detail-info-card">
+                    <div class="card-header"><i class="bi bi-buildings me-2"></i>@L["ResidentialComplex", lang]</div>
+                    <div class="card-body"><p class="mb-0 fw-medium">@Model.ResidentialComplexName</p></div>
+                </div>
+            }
 
-        @if (Model.IsOwner)
-        {
-            <form asp-controller="Listing" asp-action="Delete" asp-route-id="@Model.Id" method="post"
-                  onsubmit="return confirm('@L["ConfirmDelete", lang]')">
-                <button type="submit" class="btn btn-outline-danger w-100">
-                    <i class="bi bi-trash"></i> @L["DeleteListing", lang]
-                </button>
-            </form>
-        }
+            <!-- Actions -->
+            <div class="d-flex flex-column gap-2">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="btn @(Model.IsFavorited ? "btn-danger" : "btn-outline-danger") w-100 py-2"
+                            onclick="toggleFavorite('@Model.Id', this)"
+                            data-fav="@Model.IsFavorited.ToString().ToLower()">
+                        <i class="bi @(Model.IsFavorited ? "bi-heart-fill" : "bi-heart")"></i>
+                        <span>@(Model.IsFavorited ? L["RemoveFromFavorites", lang] : L["SaveToFavorites", lang])</span>
+                    </button>
+                }
+                else
+                {
+                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-danger w-100 py-2">
+                        <i class="bi bi-heart"></i> @L["SaveToFavorites", lang]
+                    </a>
+                }
+
+                @if (Model.IsOwner)
+                {
+                    <form asp-controller="Listing" asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('@L["ConfirmDelete", lang]')">
+                        <button type="submit" class="btn btn-outline-danger w-100 py-2">
+                            <i class="bi bi-trash"></i> @L["DeleteListing", lang]
+                        </button>
+                    </form>
+                }
+
+                <a asp-controller="Home" asp-action="Index" asp-route-lang="@lang" class="btn btn-outline-secondary w-100 py-2">
+                    <i class="bi bi-arrow-left"></i> @L["BackToListings", lang]
+                </a>
+            </div>
         </div>
     </div>
 </div>

@@ -4,7 +4,7 @@
     ViewData["Title"] = "Admin Dashboard";
 }
 
-<!-- Loading spinner (shown until page fully renders) -->
+<!-- Loading spinner -->
 <div id="dashboardSpinner" class="text-center py-5">
     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
         <span class="visually-hidden">Loading...</span>
@@ -19,7 +19,7 @@
     <div class="alert alert-danger d-flex align-items-center" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <div>
-            <strong>Error:</strong> Failed to load dashboard data from the API. Please try again later.
+            <strong>Error:</strong> Failed to load dashboard data from the API.
             <a href="@Url.Action("Dashboard")" class="btn btn-sm btn-outline-danger ms-3">
                 <i class="bi bi-arrow-clockwise"></i> Retry
             </a>
@@ -29,57 +29,77 @@
 else
 {
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
-            <hr />
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="bi bi-speedometer2 text-gradient"></i> Admin Dashboard</h2>
+            <p class="text-muted small mb-0">Overview of your platform performance</p>
         </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="row g-3 mb-4">
-        <div class="col-md">
-            <div class="card text-bg-primary h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-house-door display-6"></i>
-                    <h2 class="mt-2 mb-0">@Model.TotalListings</h2>
-                    <small>Total Listings</small>
+        <div class="col-6 col-lg">
+            <div class="card admin-stat-card h-100" style="--stripe:#4f46e5;">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="stat-icon" style="background:rgba(79,70,229,.1);color:#4f46e5;">
+                        <i class="bi bi-house-door"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">@Model.TotalListings</div>
+                        <small class="text-muted">Total Listings</small>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md">
-            <div class="card text-bg-warning h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-clock-history display-6"></i>
-                    <h2 class="mt-2 mb-0">@Model.PendingListings</h2>
-                    <small>Pending</small>
+        <div class="col-6 col-lg">
+            <div class="card admin-stat-card h-100" style="--stripe:#eab308;">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="stat-icon" style="background:rgba(234,179,8,.1);color:#eab308;">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">@Model.PendingListings</div>
+                        <small class="text-muted">Pending</small>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md">
-            <div class="card text-bg-success h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-check-circle display-6"></i>
-                    <h2 class="mt-2 mb-0">@Model.ApprovedListings</h2>
-                    <small>Approved</small>
+        <div class="col-6 col-lg">
+            <div class="card admin-stat-card h-100" style="--stripe:#10b981;">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="stat-icon" style="background:rgba(16,185,129,.1);color:#10b981;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">@Model.ApprovedListings</div>
+                        <small class="text-muted">Approved</small>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md">
-            <div class="card text-bg-info h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-people display-6"></i>
-                    <h2 class="mt-2 mb-0">@Model.TotalUsers</h2>
-                    <small>Total Users</small>
+        <div class="col-6 col-lg">
+            <div class="card admin-stat-card h-100" style="--stripe:#3b82f6;">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="stat-icon" style="background:rgba(59,130,246,.1);color:#3b82f6;">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">@Model.TotalUsers</div>
+                        <small class="text-muted">Total Users</small>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md">
-            <div class="card text-bg-danger h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-x display-6"></i>
-                    <h2 class="mt-2 mb-0">@Model.BannedUsers</h2>
-                    <small>Banned Users</small>
+        <div class="col-6 col-lg">
+            <div class="card admin-stat-card h-100" style="--stripe:#ef4444;">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="stat-icon" style="background:rgba(239,68,68,.1);color:#ef4444;">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">@Model.BannedUsers</div>
+                        <small class="text-muted">Banned</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,16 +108,16 @@ else
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header"><i class="bi bi-bar-chart"></i> Listings Created (Last 7 Days)</div>
+            <div class="card detail-info-card h-100">
+                <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Listings Created (Last 7 Days)</div>
                 <div class="card-body">
                     <canvas id="listingsChart"></canvas>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header"><i class="bi bi-graph-up"></i> User Registrations (Last 6 Months)</div>
+            <div class="card detail-info-card h-100">
+                <div class="card-header"><i class="bi bi-graph-up me-2"></i>User Registrations (Last 6 Months)</div>
                 <div class="card-body">
                     <canvas id="registrationsChart"></canvas>
                 </div>
@@ -109,17 +129,17 @@ else
     <div class="row g-4 mb-4">
         <!-- Recent Pending Listings -->
         <div class="col-md-7">
-            <div class="card h-100">
+            <div class="card detail-info-card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-clock-history"></i> Recent Pending Listings</span>
-                    <a asp-action="Listings" class="btn btn-sm btn-outline-primary">View All</a>
+                    <span><i class="bi bi-clock-history me-2"></i>Recent Pending Listings</span>
+                    <a asp-action="Listings" class="btn btn-sm btn-gradient px-3">View All</a>
                 </div>
                 <div class="card-body p-0">
                     @if (Model.RecentPendingListings.Count == 0)
                     {
                         <div class="text-center text-muted py-4">
-                            <i class="bi bi-check-circle display-6"></i>
-                            <p class="mt-2">No pending listings</p>
+                            <i class="bi bi-check-circle display-6" style="opacity:.3;"></i>
+                            <p class="mt-2 mb-0">No pending listings</p>
                         </div>
                     }
                     else
@@ -139,19 +159,17 @@ else
                                     @foreach (var listing in Model.RecentPendingListings)
                                     {
                                         <tr id="listing-row-@listing.Id">
-                                            <td>@listing.Title</td>
-                                            <td>@listing.Price.ToString("N0") ₼</td>
+                                            <td class="fw-medium">@listing.Title</td>
+                                            <td class="text-gradient fw-bold">@listing.Price.ToString("N0") ₼</td>
                                             <td>@(listing.CityName ?? "—")</td>
-                                            <td>@listing.CreatedAt.ToString("dd MMM yyyy")</td>
+                                            <td><small class="text-muted">@listing.CreatedAt.ToString("dd MMM yyyy")</small></td>
                                             <td class="text-end">
-                                                <button class="btn btn-sm btn-success me-1"
-                                                        onclick="quickAction('@listing.Id', 'approve')"
-                                                        title="Approve">
+                                                <button class="btn btn-sm btn-outline-success me-1"
+                                                        onclick="quickAction('@listing.Id', 'approve')" title="Approve">
                                                     <i class="bi bi-check-lg"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger"
-                                                        onclick="quickAction('@listing.Id', 'reject')"
-                                                        title="Reject">
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        onclick="quickAction('@listing.Id', 'reject')" title="Reject">
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             </td>
@@ -167,17 +185,17 @@ else
 
         <!-- Recent Users -->
         <div class="col-md-5">
-            <div class="card h-100">
+            <div class="card detail-info-card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-people"></i> Recent Registrations</span>
-                    <a asp-action="Users" class="btn btn-sm btn-outline-success">View All</a>
+                    <span><i class="bi bi-people me-2"></i>Recent Registrations</span>
+                    <a asp-action="Users" class="btn btn-sm btn-gradient px-3">View All</a>
                 </div>
                 <div class="card-body p-0">
                     @if (Model.RecentUsers.Count == 0)
                     {
                         <div class="text-center text-muted py-4">
-                            <i class="bi bi-person-x display-6"></i>
-                            <p class="mt-2">No recent registrations</p>
+                            <i class="bi bi-person-x display-6" style="opacity:.3;"></i>
+                            <p class="mt-2 mb-0">No recent registrations</p>
                         </div>
                     }
                     else
@@ -185,13 +203,12 @@ else
                         <ul class="list-group list-group-flush">
                             @foreach (var user in Model.RecentUsers)
                             {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
                                     <div>
-                                        <strong>@user.FullName</strong>
-                                        <br />
+                                        <strong class="d-block" style="font-size:.9rem;">@user.FullName</strong>
                                         <small class="text-muted">@user.Email</small>
                                     </div>
-                                    <span class="badge bg-secondary">@user.CreatedAt.ToString("dd MMM")</span>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">@user.CreatedAt.ToString("dd MMM")</span>
                                 </li>
                             }
                         </ul>
@@ -204,25 +221,25 @@ else
     <!-- Quick Navigation -->
     <div class="row g-4">
         <div class="col-md-6">
-            <div class="card border-primary h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-house-door display-3 text-primary"></i>
-                    <h4 class="mt-3">Listing Moderation</h4>
-                    <p class="text-muted">Approve, reject, edit, or delete listings.</p>
-                    <a asp-action="Listings" class="btn btn-primary">
-                        <i class="bi bi-list-check"></i> Manage Listings
+            <div class="card detail-info-card h-100 text-center">
+                <div class="card-body py-4">
+                    <i class="bi bi-house-door display-4 text-gradient"></i>
+                    <h5 class="mt-3 fw-bold">Listing Moderation</h5>
+                    <p class="text-muted small">Approve, reject, edit, or delete listings.</p>
+                    <a asp-action="Listings" class="btn btn-gradient px-4">
+                        <i class="bi bi-list-check me-1"></i> Manage Listings
                     </a>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card border-success h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-people display-3 text-success"></i>
-                    <h4 class="mt-3">User Management</h4>
-                    <p class="text-muted">View, edit, ban, or delete user accounts.</p>
-                    <a asp-action="Users" class="btn btn-success">
-                        <i class="bi bi-person-gear"></i> Manage Users
+            <div class="card detail-info-card h-100 text-center">
+                <div class="card-body py-4">
+                    <i class="bi bi-people display-4" style="color:#10b981;"></i>
+                    <h5 class="mt-3 fw-bold">User Management</h5>
+                    <p class="text-muted small">View, edit, ban, or delete user accounts.</p>
+                    <a asp-action="Users" class="btn btn-outline-success px-4">
+                        <i class="bi bi-person-gear me-1"></i> Manage Users
                     </a>
                 </div>
             </div>
@@ -246,14 +263,15 @@ else
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-    // ── Hide spinner, show content ──────────────────────────────────────
     document.getElementById('dashboardSpinner').style.display = 'none';
     document.getElementById('dashboardContent').style.display = 'block';
 
     @if (!Model.LoadFailed)
     {
-        // ── Chart.js: Listings per day ──────────────────────────────────
         <text>
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)';
+
         new Chart(document.getElementById('listingsChart'), {
             type: 'bar',
             data: {
@@ -261,20 +279,19 @@ else
                 datasets: [{
                     label: 'Listings',
                     data: @Html.Raw(JsonSerializer.Serialize(Model.ListingsPerDayValues)),
-                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
                     borderWidth: 1,
-                    borderRadius: 4
+                    borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: gridColor } }, x: { grid: { display: false } } }
             }
         });
 
-        // ── Chart.js: Registrations per month ───────────────────────────
         new Chart(document.getElementById('registrationsChart'), {
             type: 'line',
             data: {
@@ -282,24 +299,24 @@ else
                 datasets: [{
                     label: 'Registrations',
                     data: @Html.Raw(JsonSerializer.Serialize(Model.RegistrationsPerMonthValues)),
-                    borderColor: 'rgba(25, 135, 84, 1)',
-                    backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     fill: true,
-                    tension: 0.3,
+                    tension: 0.4,
                     pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: '#10b981'
                 }]
             },
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: gridColor } }, x: { grid: { display: false } } }
             }
         });
         </text>
     }
 
-    // ── Quick Approve / Reject ──────────────────────────────────────────
     function quickAction(id, action) {
         const url = action === 'approve'
             ? `@Url.Action("ApproveListing", "Admin")?id=${id}`
@@ -316,18 +333,22 @@ else
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                row?.remove();
-                showToast(
-                    action === 'approve' ? 'Approved' : 'Rejected',
-                    `Listing has been ${action === 'approve' ? 'approved' : 'rejected'} successfully.`,
-                    action === 'approve' ? 'text-bg-success' : 'text-bg-warning'
-                );
-                // Check if table is now empty
-                const tbody = document.querySelector('#pendingListingsTable tbody');
-                if (tbody && tbody.children.length === 0) {
-                    tbody.closest('.table-responsive').innerHTML =
-                        '<div class="text-center text-muted py-4"><i class="bi bi-check-circle display-6"></i><p class="mt-2">No pending listings</p></div>';
-                }
+                row.style.transition = 'opacity .3s, transform .3s';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    row.remove();
+                    showToast(
+                        action === 'approve' ? 'Approved' : 'Rejected',
+                        `Listing has been ${action === 'approve' ? 'approved' : 'rejected'} successfully.`,
+                        action === 'approve' ? 'text-bg-success' : 'text-bg-warning'
+                    );
+                    const tbody = document.querySelector('#pendingListingsTable tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        tbody.closest('.table-responsive').innerHTML =
+                            '<div class="text-center text-muted py-4"><i class="bi bi-check-circle display-6" style="opacity:.3;"></i><p class="mt-2 mb-0">No pending listings</p></div>';
+                    }
+                }, 300);
             } else {
                 buttons?.forEach(b => { b.disabled = false; });
                 showToast('Error', 'Action failed. Please try again.', 'text-bg-danger');
